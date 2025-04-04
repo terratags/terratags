@@ -1,0 +1,58 @@
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/vendor/
+/bin/
+go.work
+
+# Go build and test cache
+.cache/
+
+# Go coverage
+coverage.txt
+coverage.html
+
+# Terraform specific
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+.terraform.lock.hcl
+crash.log
+crash.*.log
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+
+
+# Log files
+*.log
+
+# Local configuration files
+config.local.yaml
+config.local.json
+
+# Test files
+testdata/
+
+# Environment variables
+.env
+.env.local

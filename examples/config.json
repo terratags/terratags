@@ -1,0 +1,9 @@
+{
+    "required_tags": [
+      "Name",
+      "Environment",
+      "Owner",
+      "Project"
+    ]
+  }
+  
