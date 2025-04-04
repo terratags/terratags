@@ -1,4 +1,4 @@
-# Terratags
+# Terratags ( Auto generated based on prompts)
 
 Terratags is a Go-based utility for validating tags in Terraform configurations. It helps ensure that all taggable resources have the required tags.
 
@@ -127,10 +127,17 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 To update the list of taggable resources:
 
-1. Initialize a Terraform configuration with the AWS and AWSCC providers
-2. Extract the provider schemas using `terraform providers schema -json`
-3. Parse the schema to identify resources with `tags` attributes
-4. Update the `aws_taggable_resources.go` file
+```bash
+# Run the update script
+go run scripts/update_resources.go
+```
+
+This script will:
+1. Create a temporary Terraform configuration with AWS and AWSCC providers
+2. Initialize the providers
+3. Extract the provider schemas
+4. Parse the schemas to identify resources with `tags` attributes
+5. Generate an updated `aws_taggable_resources.go` file
 
 ## License
 
