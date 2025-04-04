@@ -61,28 +61,39 @@ func main() {
 		fmt.Printf("Found %d Terraform files to analyze\n", len(terraformFiles))
 	}
 
-	// Parse Terraform files and validate tags
+	// Parse Terraform files to extract resources and provider configurations
 	var allResources []parser.Resource
+	var allProviders []parser.ProviderConfig
+	
 	for _, file := range terraformFiles {
 		if verbose {
 			fmt.Printf("Analyzing file: %s\n", file)
 		}
 
+		// Extract resources
 		resources, err := parser.ParseFile(file)
 		if err != nil {
-			fmt.Printf("Error parsing file %s: %v\n", file, err)
-			continue
+			fmt.Printf("Error parsing file %s for resources: %v\n", file, err)
+		} else {
+			allResources = append(allResources, resources...)
 		}
 
-		allResources = append(allResources, resources...)
+		// Extract provider configurations
+		providers, err := parser.ParseProviderBlocks(file)
+		if err != nil {
+			fmt.Printf("Error parsing file %s for providers: %v\n", file, err)
+		} else {
+			allProviders = append(allProviders, providers...)
+		}
 	}
 
 	if verbose {
 		fmt.Printf("Found %d taggable resources\n", len(allResources))
+		fmt.Printf("Found %d provider configurations with default tags\n", len(allProviders))
 	}
 
-	// Validate required tags
-	results := validator.ValidateRequiredTags(allResources, cfg.Required)
+	// Validate required tags, considering provider default tags
+	results := validator.ValidateRequiredTags(allResources, allProviders, cfg.Required)
 
 	// Print results
 	if len(results) > 0 {
