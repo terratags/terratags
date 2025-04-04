@@ -114,29 +114,8 @@ func ParseFile(path string) ([]Resource, error) {
 
 // isTaggableResource checks if a resource type supports tagging
 func isTaggableResource(resourceType string) bool {
-	// This is a simplified list - in a real implementation, this would be more comprehensive
-	taggableResources := map[string]bool{
-		"aws_instance":           true,
-		"aws_s3_bucket":          true,
-		"aws_vpc":                true,
-		"aws_subnet":             true,
-		"aws_security_group":     true,
-		"aws_db_instance":        true,
-		"aws_lambda_function":    true,
-		"aws_ecs_cluster":        true,
-		"aws_eks_cluster":        true,
-		"aws_elasticache_cluster": true,
-		"aws_elb":                true,
-		"aws_lb":                 true,
-		"aws_rds_cluster":        true,
-		"aws_dynamodb_table":     true,
-		"azurerm_virtual_machine": true,
-		"azurerm_storage_account": true,
-		"google_compute_instance": true,
-		// Add more taggable resources as needed
-	}
-
-	return taggableResources[resourceType]
+	// Use the comprehensive list of AWS and AWSCC taggable resources
+	return awsTaggableResources[resourceType]
 }
 
 // extractTags extracts tags from a resource block

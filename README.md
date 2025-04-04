@@ -7,8 +7,9 @@ Terratags is a Go-based utility for validating tags in Terraform configurations.
 - Validates tags on Terraform resources and modules
 - Supports both direct resource blocks and module blocks
 - Configurable required tags via JSON or YAML configuration
-- Works with AWS, Azure, and GCP resources
+- Works with AWS and AWSCC resources
 - Can be integrated into CI/CD pipelines
+- Comprehensive list of taggable resources
 
 ## Installation
 
@@ -109,9 +110,27 @@ The repository includes example Terraform configurations in the `examples` direc
 - `examples/module_blocks`: Examples of module blocks with various tag configurations
 - `examples/config.json` and `examples/config.yaml`: Example configuration files
 
+## Supported Resources
+
+Terratags includes a comprehensive list of AWS and AWSCC resources that support tagging. The current version supports:
+
+- **730+ AWS provider resources** that accept tags
+- **710+ AWSCC provider resources** that accept tags
+
+This list is automatically generated from the provider schemas and is regularly updated to ensure compatibility with the latest AWS resources.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Updating the Resource List
+
+To update the list of taggable resources:
+
+1. Initialize a Terraform configuration with the AWS and AWSCC providers
+2. Extract the provider schemas using `terraform providers schema -json`
+3. Parse the schema to identify resources with `tags` attributes
+4. Update the `aws_taggable_resources.go` file
 
 ## License
 
