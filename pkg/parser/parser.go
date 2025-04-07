@@ -125,14 +125,17 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 	// Convert content to string
 	fileContent := string(content)
 	
-	// Find the resource block
-	resourcePattern := fmt.Sprintf(`resource\s+"%s"\s+"%s"\s*{[^}]*}`, regexp.QuoteMeta(resourceType), regexp.QuoteMeta(resourceName))
-	resourceRegex := regexp.MustCompile(`(?s)` + resourcePattern)
+	// Find the resource block with proper handling of nested blocks
+	// This pattern matches the entire resource block including nested blocks
+	resourcePattern := fmt.Sprintf(`resource\s+"%s"\s+"%s"\s*{[\s\S]*?(?:^}|\n}|\r\n})`, 
+		regexp.QuoteMeta(resourceType), regexp.QuoteMeta(resourceName))
+	resourceRegex := regexp.MustCompile(`(?sm)` + resourcePattern)
 	resourceMatch := resourceRegex.FindString(fileContent)
 	
 	if resourceMatch != "" {
 		// Find the tags block within the resource
-		tagsPattern := `tags\s*=\s*{([^}]*)}`
+		// Improved pattern to handle tags that might appear after nested blocks
+		tagsPattern := `tags\s*=\s*{([\s\S]*?)}`
 		tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
 		tagsMatch := tagsRegex.FindStringSubmatch(resourceMatch)
 		
@@ -168,14 +171,15 @@ func extractModuleTagsFromContent(content []byte, moduleName string) map[string]
 	// Convert content to string
 	fileContent := string(content)
 	
-	// Find the module block
-	modulePattern := fmt.Sprintf(`module\s+"%s"\s*{[^}]*}`, regexp.QuoteMeta(moduleName))
-	moduleRegex := regexp.MustCompile(`(?s)` + modulePattern)
+	// Find the module block with proper handling of nested blocks
+	modulePattern := fmt.Sprintf(`module\s+"%s"\s*{[\s\S]*?(?:^}|\n}|\r\n})`, regexp.QuoteMeta(moduleName))
+	moduleRegex := regexp.MustCompile(`(?sm)` + modulePattern)
 	moduleMatch := moduleRegex.FindString(fileContent)
 	
 	if moduleMatch != "" {
 		// Find the tags block within the module
-		tagsPattern := `tags\s*=\s*{([^}]*)}`
+		// Improved pattern to handle tags that might appear after nested blocks
+		tagsPattern := `tags\s*=\s*{([\s\S]*?)}`
 		tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
 		tagsMatch := tagsRegex.FindStringSubmatch(moduleMatch)
 		
