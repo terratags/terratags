@@ -23,5 +23,8 @@ resource "aws_instance" "example" {
 resource "aws_s3_bucket" "example" {
   bucket = "my-example-bucket"
   
-  # No tags needed here, as all required tags come from default_tags
+  # Adding Name tag, other required tags come from default_tags
+  tags = {
+    Name = "example-bucket"
+  }
 }

@@ -2,65 +2,97 @@ package validator
 
 import (
 	"fmt"
-	"strings"
+	"path/filepath"
 
+	"terratags/pkg/config"
 	"terratags/pkg/parser"
 )
 
-// ValidationResult represents the result of a tag validation
-type ValidationResult struct {
-	ResourceType string
-	ResourceName string
-	Message      string
-}
+// ValidateResources validates that all resources have the required tags
+func ValidateResources(resources []parser.Resource, providers []parser.ProviderConfig, cfg *config.Config) (bool, []string) {
+	var issues []string
+	valid := true
 
-// ValidateRequiredTags validates that resources have all required tags
-// considering both resource-specific tags and provider default tags
-func ValidateRequiredTags(resources []parser.Resource, providers []parser.ProviderConfig, requiredTags []string) []ValidationResult {
-	var results []ValidationResult
-
-	// Extract default tags from AWS providers
-	defaultTags := make(map[string]string)
+	// Create a map of provider default tags by path
+	defaultTagsByPath := make(map[string]map[string]string)
 	for _, provider := range providers {
-		if strings.HasPrefix(provider.Name, "aws") {
-			for k, v := range provider.DefaultTags {
-				defaultTags[k] = v
-			}
-		}
+		defaultTagsByPath[provider.Path] = provider.DefaultTags
 	}
 
 	for _, resource := range resources {
-		// For AWS resources, consider both resource tags and default tags
-		effectiveTags := make(map[string]string)
+		// Get default tags for this resource's path
+		defaultTags := defaultTagsByPath[resource.Path]
 		
-		// Add provider default tags first (if this is an AWS resource)
-		if strings.HasPrefix(resource.Type, "aws") {
-			for k, v := range defaultTags {
-				effectiveTags[k] = v
+		// Check if all required tags are present
+		for _, requiredTag := range cfg.Required {
+			// Check if the tag is in the resource's tags
+			if _, exists := resource.Tags[requiredTag]; !exists {
+				// If not in resource tags, check if it's in default tags
+				if _, existsInDefault := defaultTags[requiredTag]; !existsInDefault {
+					valid = false
+					issues = append(issues, fmt.Sprintf("  - %s '%s': Missing required tag: %s", resource.Type, resource.Name, requiredTag))
+				} else {
+					// Tag exists in default_tags, so it's valid
+					if len(defaultTags) > 0 {
+						fmt.Printf("Resource %s '%s' inherits tag '%s' from provider default_tags\n", 
+							resource.Type, resource.Name, requiredTag)
+					}
+				}
 			}
-		}
-		
-		// Add resource-specific tags (these override default tags)
-		for k, v := range resource.Tags {
-			effectiveTags[k] = v
-		}
-		
-		// Now validate against the effective tags
-		var missingTags []string
-		for _, required := range requiredTags {
-			if _, exists := effectiveTags[required]; !exists {
-				missingTags = append(missingTags, required)
-			}
-		}
-		
-		if len(missingTags) > 0 {
-			results = append(results, ValidationResult{
-				ResourceType: resource.Type,
-				ResourceName: resource.Name,
-				Message:      fmt.Sprintf("Missing required tags: %s", strings.Join(missingTags, ", ")),
-			})
 		}
 	}
 
-	return results
+	return valid, issues
+}
+
+// ValidateDirectory validates all Terraform files in a directory
+func ValidateDirectory(dir string, cfg *config.Config, verbose bool) (bool, []string) {
+	// Find all Terraform files in the directory
+	files, err := filepath.Glob(filepath.Join(dir, "*.tf"))
+	if err != nil {
+		return false, []string{fmt.Sprintf("Error finding Terraform files: %s", err)}
+	}
+
+	if verbose {
+		fmt.Printf("Found %d Terraform files to analyze\n", len(files))
+	}
+
+	var allResources []parser.Resource
+	var allProviders []parser.ProviderConfig
+
+	// Parse each file
+	for _, file := range files {
+		if verbose {
+			fmt.Printf("Analyzing file: %s\n", file)
+		}
+
+		// Parse resources
+		resources, err := parser.ParseFile(file)
+		if err != nil {
+			if verbose {
+				fmt.Printf("Error parsing file %s: %s\n", file, err)
+			}
+			continue
+		}
+		allResources = append(allResources, resources...)
+
+		// Parse provider blocks
+		providers, err := parser.ParseProviderBlocks(file)
+		if err != nil {
+			if verbose {
+				fmt.Printf("Error parsing provider blocks in %s: %s\n", file, err)
+			}
+			continue
+		}
+		allProviders = append(allProviders, providers...)
+	}
+
+	if verbose {
+		fmt.Printf("Found %d taggable resources\n", len(allResources))
+		fmt.Printf("Found %d provider configurations with default tags\n", len(allProviders))
+	}
+
+	// Validate resources
+	valid, issues := ValidateResources(allResources, allProviders, cfg)
+	return valid, issues
 }

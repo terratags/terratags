@@ -3,10 +3,10 @@ package parser
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
-	"github.com/zclconf/go-cty/cty"
 )
 
 // Resource represents a Terraform resource with its tags
@@ -83,7 +83,7 @@ func ParseFile(path string) ([]Resource, error) {
 			
 			// Check if this resource type supports tagging
 			if isTaggableResource(resourceType) {
-				tags := extractTags(block)
+				tags := extractTagsFromContent(content, resourceType, resourceName)
 				resources = append(resources, Resource{
 					Type: resourceType,
 					Name: resourceName,
@@ -94,7 +94,7 @@ func ParseFile(path string) ([]Resource, error) {
 		case "module":
 			moduleName := block.Labels[0]
 			// Extract module resources and their tags
-			moduleTags := extractModuleTags(block)
+			moduleTags := extractModuleTagsFromContent(content, moduleName)
 			if len(moduleTags) > 0 {
 				resources = append(resources, Resource{
 					Type: "module",
@@ -118,84 +118,83 @@ func isTaggableResource(resourceType string) bool {
 	return awsTaggableResources[resourceType]
 }
 
-// extractTags extracts tags from a resource block
-func extractTags(block *hcl.Block) map[string]string {
+// extractTagsFromContent extracts tags directly from the file content
+func extractTagsFromContent(content []byte, resourceType, resourceName string) map[string]string {
 	tags := make(map[string]string)
-
-	// Special case for our example.tf file
-	if block.Labels[0] == "aws_instance" && block.Labels[1] == "example" {
-		tags["Name"] = "example-instance"
-		tags["Environment"] = "dev"
-		tags["Owner"] = "team-a"
-		tags["Project"] = "demo"
-		tags["CostCenter"] = "123456"
-		return tags
-	}
-
-	content, _ := block.Body.Content(&hcl.BodySchema{
-		Attributes: []hcl.AttributeSchema{
-			{Name: "tags", Required: false},
-		},
-	})
-
-	if attr, exists := content.Attributes["tags"]; exists {
-		// For debugging
-		fmt.Printf("Found tags attribute in %s %s\n", block.Labels[0], block.Labels[1])
+	
+	// Convert content to string
+	fileContent := string(content)
+	
+	// Find the resource block
+	resourcePattern := fmt.Sprintf(`resource\s+"%s"\s+"%s"\s*{[^}]*}`, regexp.QuoteMeta(resourceType), regexp.QuoteMeta(resourceName))
+	resourceRegex := regexp.MustCompile(`(?s)` + resourcePattern)
+	resourceMatch := resourceRegex.FindString(fileContent)
+	
+	if resourceMatch != "" {
+		// Find the tags block within the resource
+		tagsPattern := `tags\s*=\s*{([^}]*)}`
+		tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
+		tagsMatch := tagsRegex.FindStringSubmatch(resourceMatch)
 		
-		// Create an evaluation context
-		ctx := &hcl.EvalContext{
-			Variables: map[string]cty.Value{},
-		}
-		
-		val, diags := attr.Expr.Value(ctx)
-		if diags.HasErrors() {
-			fmt.Printf("Error evaluating tags: %s\n", diags.Error())
-		} else {
-			fmt.Printf("Tags type: %s\n", val.Type().FriendlyName())
-			// Try to process as map if possible
-			if val.Type().IsMapType() || val.Type().IsObjectType() {
-				val.ForEachElement(func(key cty.Value, value cty.Value) bool {
-					if key.Type() == cty.String {
-						keyStr := key.AsString()
-						// Debug each key found
-						fmt.Printf("Found tag key: %s\n", keyStr)
-						tags[keyStr] = "dummy-value"
-						if value.Type() == cty.String {
-							tags[keyStr] = value.AsString()
-						}
-					}
-					return true
-				})
+		if len(tagsMatch) > 1 {
+			fmt.Printf("Found tags attribute in %s %s\n", resourceType, resourceName)
+			
+			// Extract key-value pairs
+			tagContent := tagsMatch[1]
+			keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
+			keyValueRegex := regexp.MustCompile(keyValuePattern)
+			keyValueMatches := keyValueRegex.FindAllStringSubmatch(tagContent, -1)
+			
+			for _, match := range keyValueMatches {
+				if len(match) > 2 {
+					key := match[1]
+					value := match[2]
+					fmt.Printf("Found tag key: %s\n", key)
+					tags[key] = value
+				}
 			}
+		} else {
+			fmt.Printf("No tags attribute found in %s %s\n", resourceType, resourceName)
 		}
-	} else {
-		fmt.Printf("No tags attribute found in %s %s\n", block.Labels[0], block.Labels[1])
 	}
 	
 	return tags
 }
 
-// extractModuleTags extracts tags from a module block
-func extractModuleTags(block *hcl.Block) map[string]string {
+// extractModuleTagsFromContent extracts module tags directly from the file content
+func extractModuleTagsFromContent(content []byte, moduleName string) map[string]string {
 	tags := make(map[string]string)
-
-	content, _ := block.Body.Content(&hcl.BodySchema{
-		Attributes: []hcl.AttributeSchema{
-			{Name: "tags", Required: false},
-		},
-	})
-
-	if attr, exists := content.Attributes["tags"]; exists {
-		val, diags := attr.Expr.Value(nil)
-		if !diags.HasErrors() && val.Type().IsMapType() {
-			val.ForEachElement(func(key cty.Value, value cty.Value) bool {
-				if key.Type() == cty.String && value.Type() == cty.String {
-					tags[key.AsString()] = value.AsString()
+	
+	// Convert content to string
+	fileContent := string(content)
+	
+	// Find the module block
+	modulePattern := fmt.Sprintf(`module\s+"%s"\s*{[^}]*}`, regexp.QuoteMeta(moduleName))
+	moduleRegex := regexp.MustCompile(`(?s)` + modulePattern)
+	moduleMatch := moduleRegex.FindString(fileContent)
+	
+	if moduleMatch != "" {
+		// Find the tags block within the module
+		tagsPattern := `tags\s*=\s*{([^}]*)}`
+		tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
+		tagsMatch := tagsRegex.FindStringSubmatch(moduleMatch)
+		
+		if len(tagsMatch) > 1 {
+			// Extract key-value pairs
+			tagContent := tagsMatch[1]
+			keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
+			keyValueRegex := regexp.MustCompile(keyValuePattern)
+			keyValueMatches := keyValueRegex.FindAllStringSubmatch(tagContent, -1)
+			
+			for _, match := range keyValueMatches {
+				if len(match) > 2 {
+					key := match[1]
+					value := match[2]
+					tags[key] = value
 				}
-				return true
-			})
+			}
 		}
 	}
-
+	
 	return tags
 }
