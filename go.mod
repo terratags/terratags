@@ -1,6 +1,6 @@
 module terratags
 
-go 1.21
+go 1.24
 
 require (
 	github.com/hashicorp/hcl/v2 v2.19.1
