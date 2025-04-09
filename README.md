@@ -1,6 +1,6 @@
 # Terratags
 
-Terratags is a Go-based utility for validating tags in Terraform configurations. It helps ensure that all taggable resources have the required tags.
+Terratags is a Go-based utility for validating tags in Terraform configurations. It helps review that all taggable resources have the required tags.
 
 ## Features
 
