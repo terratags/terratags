@@ -4,26 +4,37 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"terratags/pkg/config"
+	"terratags/pkg/parser"
 	"terratags/pkg/validator"
 )
 
 func main() {
 	var (
-		configFile   string
-		terraformDir string
-		verbose      bool
+		configFile     string
+		terraformDir   string
+		verbose        bool
+		planFile       string
+		reportFile     string
+		autoRemediate  bool
+		exemptionsFile string
 	)
 
 	flag.StringVar(&configFile, "config", "", "Path to the config file (JSON/YAML) containing required tag keys")
 	flag.StringVar(&terraformDir, "dir", ".", "Path to the Terraform directory to analyze")
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
+	flag.StringVar(&planFile, "plan", "", "Path to Terraform plan JSON file to analyze")
+	flag.StringVar(&reportFile, "report", "", "Path to output HTML report file")
+	flag.BoolVar(&autoRemediate, "remediate", false, "Show auto-remediation suggestions for non-compliant resources")
+	flag.StringVar(&exemptionsFile, "exemptions", "", "Path to exemptions file (JSON/YAML)")
 	flag.Parse()
 
 	if configFile == "" {
 		fmt.Println("Error: Config file is required")
-		fmt.Println("Usage: terratags -config <config_file.json|yaml> [-dir <terraform_directory>] [-verbose]")
+		fmt.Println("Usage: terratags -config <config_file.json|yaml> [-dir <terraform_directory>] [-verbose] [-plan <plan.json>] [-report <report.html>] [-remediate] [-exemptions <exemptions.yaml>]")
 		os.Exit(1)
 	}
 
@@ -34,19 +45,106 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Load exemptions if provided
+	if exemptionsFile != "" {
+		exemptions, err := config.LoadExemptions(exemptionsFile)
+		if err != nil {
+			fmt.Printf("Error loading exemptions: %v\n", err)
+			os.Exit(1)
+		}
+		cfg.Exemptions = exemptions
+		if verbose {
+			fmt.Printf("Loaded %d exemptions\n", len(exemptions))
+		}
+	}
+
 	if verbose {
 		fmt.Printf("Loaded configuration with %d required tags\n", len(cfg.Required))
 	}
 
-	// Validate the directory
-	valid, issues := validator.ValidateDirectory(terraformDir, cfg, verbose)
+	// Determine which validation to run
+	var valid bool
+	var violations []validator.TagViolation
+	var stats validator.TagComplianceStats
+	var resources []parser.Resource
+
+	if planFile != "" {
+		// Validate the Terraform plan
+		if verbose {
+			fmt.Printf("Validating Terraform plan: %s\n", planFile)
+		}
+		valid, violations, stats, resources = validator.ValidateTerraformPlan(planFile, cfg, verbose)
+	} else {
+		// Validate the directory
+		if verbose {
+			fmt.Printf("Validating Terraform directory: %s\n", terraformDir)
+		}
+		valid, violations, stats, resources = validator.ValidateDirectory(terraformDir, cfg, verbose)
+	}
+
+	// Generate HTML report if requested
+	if reportFile != "" {
+		reportContent := validator.GenerateHTMLReport(violations, stats, cfg)
+		reportDir := filepath.Dir(reportFile)
+		if reportDir != "." {
+			if err := os.MkdirAll(reportDir, 0755); err != nil {
+				fmt.Printf("Error creating report directory: %v\n", err)
+			}
+		}
+		if err := os.WriteFile(reportFile, []byte(reportContent), 0644); err != nil {
+			fmt.Printf("Error writing report file: %v\n", err)
+		} else {
+			fmt.Printf("Report written to %s\n", reportFile)
+		}
+	}
 
 	// Print results
 	if !valid {
 		fmt.Println("\nTag validation issues found:")
-		for _, issue := range issues {
-			fmt.Println(issue)
+		for _, violation := range violations {
+			fmt.Printf("Resource %s '%s' is missing required tags: %s\n",
+				violation.ResourceType, violation.ResourceName, strings.Join(violation.MissingTags, ", "))
+
+			// Show auto-remediation suggestions if requested
+			if autoRemediate {
+				fmt.Println("\nSuggested remediation:")
+
+				// Get existing tags for this resource
+				existingTags := make(map[string]string)
+				for _, resource := range resources {
+					if resource.Type == violation.ResourceType && resource.Name == violation.ResourceName {
+						existingTags = resource.Tags
+						break
+					}
+				}
+
+				// Generate remediation code
+				remediation := validator.GenerateRemediationCode(
+					violation.ResourceType,
+					violation.ResourceName,
+					violation.ResourcePath,
+					violation.MissingTags,
+					existingTags)
+				fmt.Println(remediation)
+
+				// Suggest provider default_tags update if appropriate
+				if strings.HasPrefix(violation.ResourceType, "aws_") {
+					fmt.Println("\nAlternatively, consider using provider default_tags:")
+					fmt.Println(validator.SuggestProviderDefaultTagsUpdate(violation.MissingTags))
+				}
+			}
 		}
+
+		// Print summary statistics
+		fmt.Printf("\nSummary: %d/%d resources compliant (%.1f%%)\n",
+			stats.CompliantResources,
+			stats.TotalResources,
+			float64(stats.CompliantResources)/float64(stats.TotalResources)*100)
+
+		if stats.ExemptResources > 0 {
+			fmt.Printf("%d resources exempt from validation\n", stats.ExemptResources)
+		}
+
 		fmt.Println("\nTag validation failed. Please fix the issues above.")
 		os.Exit(1)
 	} else {

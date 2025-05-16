@@ -1,0 +1,12 @@
+exemptions:
+  - resource_type: aws_s3_bucket
+    resource_name: logs_bucket
+    exempt_tags: [Owner, Project]
+    reason: "Legacy bucket used for system logs only"
+    expires_at: "2025-12-31"
+  
+  - resource_type: aws_dynamodb_table
+    resource_name: "*"
+    exempt_tags: [Environment]
+    reason: "DynamoDB tables use environment from provider default_tags"
+    expires_at: "2026-01-15"

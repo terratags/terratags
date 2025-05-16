@@ -1,9 +1,11 @@
 package parser
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
@@ -15,6 +17,14 @@ type Resource struct {
 	Name string
 	Tags map[string]string
 	Path string
+	// New field to track tag sources
+	TagSources map[string]TagSource
+}
+
+// TagSource represents the source of a tag
+type TagSource struct {
+	Source string // "provider_default", "resource", "module"
+	Value  string
 }
 
 // ParseFile parses a Terraform file and extracts resources with their tags
@@ -89,6 +99,7 @@ func ParseFile(path string) ([]Resource, error) {
 					Name: resourceName,
 					Tags: tags,
 					Path: path,
+					TagSources: make(map[string]TagSource),
 				})
 			}
 		case "module":
@@ -101,6 +112,7 @@ func ParseFile(path string) ([]Resource, error) {
 					Name: moduleName,
 					Tags: moduleTags,
 					Path: path,
+					TagSources: make(map[string]TagSource),
 				})
 			}
 		// Ignore other block types (provider, data, locals, etc.)
@@ -200,5 +212,72 @@ func extractModuleTagsFromContent(content []byte, moduleName string) map[string]
 		}
 	}
 	
+	return tags
+}
+
+// ParseTerraformPlan parses a Terraform plan JSON file and extracts resources with their tags
+func ParseTerraformPlan(planPath string) ([]Resource, error) {
+	// Read the plan file
+	planData, err := os.ReadFile(planPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read plan file: %w", err)
+	}
+
+	// Parse the plan JSON
+	var plan struct {
+		ResourceChanges []struct {
+			Address string `json:"address"`
+			Type    string `json:"type"`
+			Change  struct {
+				After map[string]interface{} `json:"after"`
+			} `json:"change"`
+		} `json:"resource_changes"`
+	}
+
+	if err := json.Unmarshal(planData, &plan); err != nil {
+		return nil, fmt.Errorf("failed to parse plan JSON: %w", err)
+	}
+
+	var resources []Resource
+
+	// Process each resource change
+	for _, rc := range plan.ResourceChanges {
+		// Check if this is a taggable resource
+		if isTaggableResource(rc.Type) {
+			// Extract resource name from address
+			nameParts := strings.Split(rc.Address, ".")
+			resourceName := nameParts[len(nameParts)-1]
+
+			// Extract tags from the "after" state
+			tags := extractTagsFromPlanResource(rc.Change.After)
+
+			resources = append(resources, Resource{
+				Type: rc.Type,
+				Name: resourceName,
+				Tags: tags,
+				Path: planPath,
+				TagSources: make(map[string]TagSource),
+			})
+		}
+	}
+
+	return resources, nil
+}
+
+// extractTagsFromPlanResource extracts tags from a resource in the plan
+func extractTagsFromPlanResource(resource map[string]interface{}) map[string]string {
+	tags := make(map[string]string)
+
+	// Check if the resource has tags
+	if tagsInterface, ok := resource["tags"]; ok {
+		if tagsMap, ok := tagsInterface.(map[string]interface{}); ok {
+			for k, v := range tagsMap {
+				if strValue, ok := v.(string); ok {
+					tags[k] = strValue
+				}
+			}
+		}
+	}
+
 	return tags
 }
