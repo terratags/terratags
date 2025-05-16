@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"terratags/pkg/config"
-	"terratags/pkg/parser"
+	"github.com/terratags/terratags/pkg/config"
+	"github.com/terratags/terratags/pkg/parser"
 )
 
 // TagViolation represents a tag validation violation

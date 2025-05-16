@@ -121,7 +121,7 @@ jobs:
           go-version: '1.20'
           
       - name: Install Terratags
-        run: go install github.com/yourusername/terratags@latest
+        run: go install github.com/terratags/terratags@latest
         
       - name: Validate Tags
         run: terratags -config config.yaml -dir ./terraform

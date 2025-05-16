@@ -3,7 +3,7 @@ before:
     - go mod tidy
 
 builds:
-  - main: ./cmd/terratags
+  - main: .
     binary: terratags
     env:
       - CGO_ENABLED=0

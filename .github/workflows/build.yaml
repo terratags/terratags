@@ -30,7 +30,7 @@ jobs:
     - name: Build binary
       run: |
         mkdir -p bin
-        go build -o bin/terratags ./cmd/terratags
+        go build -o bin/terratags .
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
