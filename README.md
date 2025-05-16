@@ -16,7 +16,7 @@ Terratags is a tool for validating tags on AWS resources in Terraform configurat
 ## Installation
 
 ```bash
-go install github.com/yourusername/terratags@latest
+go install github.com/terratags/terratags@latest
 ```
 
 ## Usage
