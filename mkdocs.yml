@@ -6,8 +6,8 @@ repo_name: terratags/terratags
 
 theme:
   name: material
-  logo: docs/assets/terratags-logo.svg
-  favicon: docs/assets/terratags-logo.svg
+  logo: assets/terratags-logo.svg
+  favicon: assets/terratags-logo.svg
   palette:
     # Light mode
     - media: "(prefers-color-scheme: light)"
