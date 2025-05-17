@@ -18,11 +18,21 @@
 
 ## Installation
 
+### Using Homebrew
+
+```bash
+brew install terratags/tap/terratags
+```
+
 ### Using Go
 
 ```bash
 go install github.com/terratags/terratags@latest
 ```
+
+### Binary Download
+
+Download the appropriate binary from the [GitHub Releases](https://github.com/terratags/terratags/releases) page.
 
 ### Using Homebrew
 

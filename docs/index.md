@@ -30,6 +30,11 @@ Terratags helps enforce these tagging standards across your infrastructure, ensu
 ### Installation
 
 ```bash
+# Using Homebrew
+brew install terratags/tap/terratags
+
+# Using Go
+go install github.com/terratags/terratags@latest
 go install github.com/terratags/terratags@latest
 ```
 

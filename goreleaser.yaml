@@ -44,10 +44,10 @@ brews:
     homepage: "https://github.com/terratags/terratags"
     description: "A tool for validating tags on AWS resources in Terraform configurations"
     license: "MIT"
-    tap:
+    repository:
       owner: terratags
       name: homebrew-tap
-    folder: Formula
+    directory: Formula
     install: |
       bin.install "terratags"
     test: |

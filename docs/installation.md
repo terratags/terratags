@@ -22,16 +22,9 @@ sudo mv terratags /usr/local/bin/
 
 Download the appropriate .zip file from the releases page, extract it, and add the location to your PATH.
 
-## Homebrew Installation (macOS and Linux)
+## Homebrew Installation (macOS/Linux)
 
-Terratags can be installed using Homebrew:
-
-```bash
-brew tap terratags/tap
-brew install terratags
-```
-
-Or in a single command:
+If you use Homebrew, you can install Terratags with:
 
 ```bash
 brew install terratags/tap/terratags
@@ -77,6 +70,6 @@ This will create a `terratags` binary in your current directory.
 
 After installation, you'll need to:
 
-1. Create a [configuration file](configuration.md) that defines your required tags
+1. Create a [configuration file](configuration.yaml) that defines your required tags
 2. Run Terratags against your Terraform code
 3. Review the results and fix any non-compliant resources
