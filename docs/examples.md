@@ -115,13 +115,13 @@ module "vpc" {
 ### Basic Usage
 
 ```bash
-terratags -config config.yaml -dir ./terraform
+terratags -config config.yaml -dir ./infra
 ```
 
 ### Generate HTML Report
 
 ```bash
-terratags -config config.yaml -dir ./terraform -report report.html
+terratags -config config.yaml -dir ./infra -report report.html
 ```
 
 ### Validate Terraform Plan
@@ -135,20 +135,34 @@ terratags -config config.yaml -plan plan.json
 ### Show Auto-remediation Suggestions
 
 ```bash
-terratags -config config.yaml -dir ./terraform -remediate
+terratags -config config.yaml -dir ./infra -remediate
 ```
 
 ### Use Exemptions
 
 ```bash
-terratags -config config.yaml -dir ./terraform -exemptions exemptions.yaml
+terratags -config config.yaml -dir ./infra -exemptions exemptions.yaml
 ```
 
 ### Verbose Output
 
 ```bash
-terratags -config config.yaml -dir ./terraform -verbose
+terratags -config config.yaml -dir ./infra -verbose
 ```
+
+## Sample HTML Reports
+
+### Module Blocks Report
+
+<iframe src="../assets/reports/module_blocks.html" width="100%" height="600px" style="border: 1px solid #ddd; border-radius: 5px;"></iframe>
+
+### Resource Blocks Report
+
+<iframe src="../assets/reports/resource_blocks.html" width="100%" height="600px" style="border: 1px solid #ddd; border-radius: 5px;"></iframe>
+
+### Provider Default Tags Report
+
+<iframe src="../assets/reports/provider_default_tags.html" width="100%" height="600px" style="border: 1px solid #ddd; border-radius: 5px;"></iframe>
 
 ## Real-World Scenarios
 
@@ -178,8 +192,8 @@ required_tags:
 You can then validate each environment with the appropriate configuration:
 
 ```bash
-terratags -config dev-config.yaml -dir ./terraform/environments/dev
-terratags -config prod-config.yaml -dir ./terraform/environments/prod
+terratags -config dev-config.yaml -dir ./infra/environments/dev
+terratags -config prod-config.yaml -dir ./infra/environments/prod
 ```
 
 ### Scenario 2: Gradual Tag Implementation
@@ -214,7 +228,7 @@ exemptions:
 ```
 
 ```bash
-terratags -config phase2-config.yaml -dir ./terraform -exemptions phase2-exemptions.yaml
+terratags -config phase2-config.yaml -dir ./infra -exemptions phase2-exemptions.yaml
 ```
 
 As teams update their resources, you can remove exemptions until all resources comply with the full tagging policy.

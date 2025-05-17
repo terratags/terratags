@@ -33,15 +33,15 @@
 </head>
 <body>
     <h1>Terraform Tag Compliance Report</h1>
-    <p>Generated on: 2025-05-16 22:17:10</p>
+    <p>Generated on: 2025-05-17 09:01:07</p>
     <div class="summary">
         <h2>Summary</h2>
-        <p>Total Resources: 4</p>
+        <p>Total Resources: 2</p>
         <p>Compliant Resources: 2</p>
-        <p>Non-compliant Resources: 2</p>
+        <p>Non-compliant Resources: 0</p>
         <p>Exempt Resources: 0</p>
         <div class="progress-bar">
-            <div class="progress" style="width: 50.0%;">50.0% Compliant</div>
+            <div class="progress" style="width: 100.0%;">100.0% Compliant</div>
         </div>
     </div><h2>Required Tags</h2>
     <ul><li>Name</li><li>Environment</li><li>Owner</li><li>Project</li></ul><h2>Violations by Tag</h2>
@@ -49,30 +49,4 @@
         <tr>
             <th>Tag</th>
             <th>Violations</th>
-        </tr>
-        <tr>
-            <td>Name</td>
-            <td>1</td>
-        </tr>
-        <tr>
-            <td>Owner</td>
-            <td>1</td>
-        </tr>
-        <tr>
-            <td>Project</td>
-            <td>1</td>
-        </tr>
-        <tr>
-            <td>Environment</td>
-            <td>2</td>
-        </tr></table><h2>Non-compliant Resources</h2>
-                <div class="resource exempt">
-                    <h3>aws_s3_bucket "data_bucket"</h3>
-                    <p>Path: examples/resource_blocks/main.tf</p>
-                    <p>Status: <span class="exempt-tag">EXEMPT</span> - Legacy bucket used for system logs only</p>
-                </div>
-                <div class="resource non-compliant">
-                    <h3>aws_security_group "allow_http"</h3>
-                    <p>Path: examples/resource_blocks/main.tf</p>
-                    <p>Missing Tags: Name, Environment, Owner, Project</p>
-                </div></body></html>
+        </tr></table><h2>Non-compliant Resources</h2><p>All resources are compliant!</p></body></html>

@@ -29,7 +29,7 @@ jobs:
         run: go install github.com/terratags/terratags@latest
         
       - name: Validate Tags
-        run: terratags -config config.yaml -dir ./terraform
+        run: terratags -config config.yaml -dir ./infra
 ```
 
 ## GitLab CI
@@ -45,7 +45,7 @@ validate-tags:
   image: golang:1.24
   script:
     - go install github.com/terratags/terratags@latest
-    - terratags -config config.yaml -dir ./terraform
+    - terratags -config config.yaml -dir ./infra
   only:
     changes:
       - "**/*.tf"
@@ -71,7 +71,7 @@ steps:
 
 - script: |
     go install github.com/terratags/terratags@latest
-    terratags -config config.yaml -dir ./terraform
+    terratags -config config.yaml -dir ./infra
   displayName: 'Validate Tags'
 ```
 
@@ -94,7 +94,7 @@ pipeline {
             }
             steps {
                 sh 'go install github.com/terratags/terratags@latest'
-                sh 'terratags -config config.yaml -dir ./terraform'
+                sh 'terratags -config config.yaml -dir ./infra'
             }
         }
     }
@@ -118,7 +118,7 @@ jobs:
           command: go install github.com/terratags/terratags@latest
       - run:
           name: Validate Tags
-          command: terratags -config config.yaml -dir ./terraform
+          command: terratags -config config.yaml -dir ./infra
 
 workflows:
   version: 2
@@ -170,7 +170,7 @@ jobs:
         run: go install github.com/terratags/terratags@latest
         
       - name: Validate Tags
-        run: terratags -config config.yaml -dir ./terraform -report tag-report.html
+        run: terratags -config config.yaml -dir ./infra -report tag-report.html
         
       - name: Upload Report
         uses: actions/upload-artifact@v3

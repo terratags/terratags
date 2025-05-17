@@ -7,7 +7,7 @@ Terratags can be used in various ways to validate tags on AWS resources in your 
 The basic usage of Terratags is:
 
 ```bash
-terratags -config config.yaml -dir ./terraform
+terratags -config config.yaml -dir ./infra
 ```
 
 This command will analyze all Terraform files in the specified directory and validate that AWS resources have the required tags as defined in your configuration file.
@@ -19,7 +19,7 @@ This command will analyze all Terraform files in the specified directory and val
 Generate a detailed HTML report of tag compliance:
 
 ```bash
-terratags -config config.yaml -dir ./terraform -report report.html
+terratags -config config.yaml -dir ./infra -report report.html
 ```
 
 ### Validate Terraform Plan
@@ -37,7 +37,7 @@ terratags -config config.yaml -plan plan.json
 Get suggestions for fixing non-compliant resources:
 
 ```bash
-terratags -config config.yaml -dir ./terraform -remediate
+terratags -config config.yaml -dir ./infra -remediate
 ```
 
 ### Use Exemptions
@@ -45,7 +45,7 @@ terratags -config config.yaml -dir ./terraform -remediate
 Apply exemptions to specific resources:
 
 ```bash
-terratags -config config.yaml -dir ./terraform -exemptions exemptions.yaml
+terratags -config config.yaml -dir ./infra -exemptions exemptions.yaml
 ```
 
 ## Verbose Output
@@ -53,7 +53,7 @@ terratags -config config.yaml -dir ./terraform -exemptions exemptions.yaml
 For more detailed output, use the `-verbose` flag:
 
 ```bash
-terratags -config config.yaml -dir ./terraform -verbose
+terratags -config config.yaml -dir ./infra -verbose
 ```
 
 This will show additional information about the validation process, including:
@@ -79,7 +79,7 @@ For large Terraform codebases, you can:
 
 1. Run Terratags on specific directories:
    ```bash
-   terratags -config config.yaml -dir ./terraform/modules/networking
+   terratags -config config.yaml -dir ./infra/modules/networking
    ```
 
 2. Use the plan-based approach to only validate resources that are changing:
@@ -96,7 +96,7 @@ The HTML report provides a visual representation of tag compliance across your T
 To generate a report:
 
 ```bash
-terratags -config config.yaml -dir ./terraform -report report.html
+terratags -config config.yaml -dir ./infra -report report.html
 ```
 
 The report includes:

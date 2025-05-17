@@ -45,7 +45,7 @@ See [installation docs](docs/installation.md) for more options.
 ## Usage
 
 ```bash
-terratags -config config.yaml -dir ./terraform
+terratags -config config.yaml -dir ./infra
 ```
 
 ### Options
@@ -158,13 +158,13 @@ In this example, the AWS instance will have all four required tags: `Name` from 
 ### Basic Usage
 
 ```bash
-terratags -config config.yaml -dir ./terraform
+terratags -config config.yaml -dir ./infra
 ```
 
 ### Generate HTML Report
 
 ```bash
-terratags -config config.yaml -dir ./terraform -report report.html
+terratags -config config.yaml -dir ./infra -report report.html
 ```
 
 ### Validate Terraform Plan
@@ -178,13 +178,13 @@ terratags -config config.yaml -plan plan.json
 ### Show Auto-remediation Suggestions
 
 ```bash
-terratags -config config.yaml -dir ./terraform -remediate
+terratags -config config.yaml -dir ./infra -remediate
 ```
 
 ### Use Exemptions
 
 ```bash
-terratags -config config.yaml -dir ./terraform -exemptions exemptions.yaml
+terratags -config config.yaml -dir ./infra -exemptions exemptions.yaml
 ```
 
 ## Integration with CI/CD
@@ -215,7 +215,7 @@ jobs:
         run: go install github.com/terratags/terratags@latest
         
       - name: Validate Tags
-        run: terratags -config config.yaml -dir ./terraform
+        run: terratags -config config.yaml -dir ./infra
 ```
 
 ## Sample Report

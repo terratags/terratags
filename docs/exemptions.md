@@ -51,8 +51,7 @@ Exemptions are useful in several scenarios:
 
 1. **Legacy Resources**: Older resources that cannot be easily updated
 2. **Special Purpose Resources**: Resources with a specific purpose that don't fit the standard tagging model
-3. **Resource Limitations**: Some AWS resources have limitations on tagging
-4. **Default Tag Inheritance**: Resources that inherit tags from other sources
+3. **Default Tag Inheritance**: Resources that inherit tags from other sources
 
 ## Best Practices for Exemptions
 

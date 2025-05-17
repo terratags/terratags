@@ -41,7 +41,7 @@ go install github.com/terratags/terratags@latest
 ### Basic Usage
 
 ```bash
-terratags -config config.yaml -dir ./terraform
+terratags -config config.yaml -dir ./infra
 ```
 
 Check out the [documentation](configuration.md) for more detailed information on configuration and usage.
