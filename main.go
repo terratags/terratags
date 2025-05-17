@@ -12,6 +12,20 @@ import (
 	"github.com/terratags/terratags/pkg/validator"
 )
 
+// Custom usage function to display both long and short forms of flags
+func printUsage() {
+	fmt.Fprintf(os.Stderr, "Usage: terratags [OPTIONS]\n\n")
+	fmt.Fprintf(os.Stderr, "Options:\n")
+	fmt.Fprintf(os.Stderr, "  --config, -c <file>       Path to the config file (JSON/YAML) containing required tag keys\n")
+	fmt.Fprintf(os.Stderr, "  --dir, -d <directory>     Path to the Terraform directory to analyze (default: \".\")\n")
+	fmt.Fprintf(os.Stderr, "  --verbose, -v             Enable verbose output\n")
+	fmt.Fprintf(os.Stderr, "  --plan, -p <file>         Path to Terraform plan JSON file to analyze\n")
+	fmt.Fprintf(os.Stderr, "  --report, -r <file>       Path to output HTML report file\n")
+	fmt.Fprintf(os.Stderr, "  --remediate, -re          Show auto-remediation suggestions for non-compliant resources\n")
+	fmt.Fprintf(os.Stderr, "  --exemptions, -e <file>   Path to exemptions file (JSON/YAML)\n")
+	fmt.Fprintf(os.Stderr, "  --help, -h                Show this help message\n")
+}
+
 func main() {
 	var (
 		configFile     string
@@ -21,20 +35,48 @@ func main() {
 		reportFile     string
 		autoRemediate  bool
 		exemptionsFile string
+		showHelp       bool
 	)
 
+	// Define flags with both long and short forms
 	flag.StringVar(&configFile, "config", "", "Path to the config file (JSON/YAML) containing required tag keys")
+	flag.StringVar(&configFile, "c", "", "Path to the config file (JSON/YAML) containing required tag keys")
+
 	flag.StringVar(&terraformDir, "dir", ".", "Path to the Terraform directory to analyze")
+	flag.StringVar(&terraformDir, "d", ".", "Path to the Terraform directory to analyze")
+
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
+	flag.BoolVar(&verbose, "v", false, "Enable verbose output")
+
 	flag.StringVar(&planFile, "plan", "", "Path to Terraform plan JSON file to analyze")
+	flag.StringVar(&planFile, "p", "", "Path to Terraform plan JSON file to analyze")
+
 	flag.StringVar(&reportFile, "report", "", "Path to output HTML report file")
+	flag.StringVar(&reportFile, "r", "", "Path to output HTML report file")
+
 	flag.BoolVar(&autoRemediate, "remediate", false, "Show auto-remediation suggestions for non-compliant resources")
+	flag.BoolVar(&autoRemediate, "re", false, "Show auto-remediation suggestions for non-compliant resources")
+
 	flag.StringVar(&exemptionsFile, "exemptions", "", "Path to exemptions file (JSON/YAML)")
+	flag.StringVar(&exemptionsFile, "e", "", "Path to exemptions file (JSON/YAML)")
+
+	flag.BoolVar(&showHelp, "help", false, "Show help message")
+	flag.BoolVar(&showHelp, "h", false, "Show help message")
+
+	// Override default usage function
+	flag.Usage = printUsage
+
 	flag.Parse()
+
+	// Show help if requested or if no arguments were provided
+	if showHelp || len(os.Args) <= 1 {
+		printUsage()
+		os.Exit(0)
+	}
 
 	if configFile == "" {
 		fmt.Println("Error: Config file is required")
-		fmt.Println("Usage: terratags -config <config_file.json|yaml> [-dir <terraform_directory>] [-verbose] [-plan <plan.json>] [-report <report.html>] [-remediate] [-exemptions <exemptions.yaml>]")
+		printUsage()
 		os.Exit(1)
 	}
 
