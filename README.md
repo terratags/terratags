@@ -75,7 +75,6 @@ Exemptions allow you to exclude specific resources or resource types from certai
 - `resource_name`: The name of the specific resource to exempt. Use "*" to exempt all resources of the specified type
 - `exempt_tags`: List of tags that are not required for this resource
 - `reason`: A description explaining why this exemption exists
-- `expires_at`: Optional date when this exemption should expire (YYYY-MM-DD format)
 
 #### YAML Example
 
@@ -85,13 +84,11 @@ exemptions:
     resource_name: logs_bucket
     exempt_tags: [Owner, Project]
     reason: "Legacy bucket used for system logs only"
-    expires_at: "2025-12-31"
   
   - resource_type: aws_dynamodb_table
     resource_name: "*"
     exempt_tags: [Environment]
     reason: "DynamoDB tables use environment from provider default_tags"
-    expires_at: "2026-01-15"
 ```
 
 ### Provider Default Tags Support
@@ -197,3 +194,28 @@ jobs:
       - name: Validate Tags
         run: terratags -config config.yaml -dir ./terraform
 ```
+
+## Sample Report
+
+When you generate an HTML report with Terratags, it will look similar to this:
+
+```
+┌─────────────────────────────────────────────────────┐
+│           Terraform Tag Compliance Report           │
+├─────────────────────────────────────────────────────┤
+│ Generated on: 2025-05-16                            │
+│                                                     │
+│ Summary:                                            │
+│ ✓ Total Resources: 4                                │
+│ ✓ Compliant Resources: 2                            │
+│ ✗ Non-compliant Resources: 2                        │
+│                                                     │
+│ [████████████████████████████████--------] 50.0%    │
+│                                                     │
+│ Non-compliant Resources:                            │
+│ ✗ aws_s3_bucket "data_bucket"                       │
+│   Missing Tags: Environment, Owner, Project         │
+└─────────────────────────────────────────────────────┘
+```
+
+The HTML report provides a visual representation of tag compliance across your Terraform resources, making it easy to identify which resources need attention and track compliance metrics. You can view the generated HTML report in any web browser.

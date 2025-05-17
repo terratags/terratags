@@ -6,14 +6,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
 // Config represents the configuration for tag validation
 type Config struct {
-	Required  []string             `json:"required_tags" yaml:"required_tags"`
+	Required   []string            `json:"required_tags" yaml:"required_tags"`
 	Exemptions []ResourceExemption `json:"exemptions" yaml:"exemptions"`
 	ReportPath string              `json:"report_path" yaml:"report_path"`
 }
@@ -24,7 +23,6 @@ type ResourceExemption struct {
 	ResourceName string   `json:"resource_name" yaml:"resource_name"`
 	ExemptTags   []string `json:"exempt_tags" yaml:"exempt_tags"`
 	Reason       string   `json:"reason" yaml:"reason"`
-	ExpiresAt    string   `json:"expires_at" yaml:"expires_at"` // ISO date format
 }
 
 // LoadConfig loads the configuration from a JSON or YAML file
@@ -36,7 +34,7 @@ func LoadConfig(path string) (*Config, error) {
 
 	var config Config
 	ext := strings.ToLower(filepath.Ext(path))
-	
+
 	switch ext {
 	case ".json":
 		if err := json.Unmarshal(data, &config); err != nil {
@@ -64,7 +62,7 @@ func LoadExemptions(path string) ([]ResourceExemption, error) {
 		Exemptions []ResourceExemption `json:"exemptions" yaml:"exemptions"`
 	}
 	ext := strings.ToLower(filepath.Ext(path))
-	
+
 	switch ext {
 	case ".json":
 		if err := json.Unmarshal(data, &exemptions); err != nil {
@@ -85,17 +83,11 @@ func LoadExemptions(path string) ([]ResourceExemption, error) {
 func (c *Config) IsExemptFromTag(resourceType, resourceName, tagName string) (bool, string) {
 	for _, exemption := range c.Exemptions {
 		if (exemption.ResourceType == resourceType || exemption.ResourceType == "*") &&
-		   (exemption.ResourceName == resourceName || exemption.ResourceName == "*") {
-			
+			(exemption.ResourceName == resourceName || exemption.ResourceName == "*") {
+
 			for _, exemptTag := range exemption.ExemptTags {
 				if exemptTag == tagName || exemptTag == "*" {
-					// Check if exemption has expired
-					if exemption.ExpiresAt != "" {
-						expiryDate, err := time.Parse("2006-01-02", exemption.ExpiresAt)
-						if err == nil && time.Now().After(expiryDate) {
-							return false, "Exemption expired on " + exemption.ExpiresAt
-						}
-					}
+
 					return true, exemption.Reason
 				}
 			}
