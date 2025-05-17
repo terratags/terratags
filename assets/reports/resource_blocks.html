@@ -29,11 +29,12 @@
         .missing { color: red; }
         .present { color: green; }
         .exempt-tag { color: orange; }
+        .exemption-reason { font-style: italic; color: #666; }
     </style>
 </head>
 <body>
     <h1>Terraform Tag Compliance Report</h1>
-    <p>Generated on: 2025-05-17 09:10:47</p>
+    <p>Generated on: 2025-05-16 14:09:34</p>
     <div class="summary">
         <h2>Summary</h2>
         <p>Total Resources: 4</p>
@@ -43,8 +44,15 @@
         <div class="progress-bar">
             <div class="progress" style="width: 50.0%;">50.0% Compliant</div>
         </div>
-    </div><h2>Required Tags</h2>
-    <ul><li>Name</li><li>Owner</li><li>Project</li></ul><h2>Violations by Tag</h2>
+    </div>
+    <h2>Required Tags</h2>
+    <ul>
+        <li>Name</li>
+        <li>Environment</li>
+        <li>Owner</li>
+        <li>Project</li>
+    </ul>
+    <h2>Violations by Tag</h2>
     <table class="tag-table">
         <tr>
             <th>Tag</th>
@@ -61,9 +69,141 @@
         <tr>
             <td>Project</td>
             <td>1</td>
-        </tr></table><h2>Non-compliant Resources</h2>
-                <div class="resource non-compliant">
-                    <h3>aws_security_group "allow_http"</h3>
-                    <p>Path: resource_blocks/main.tf</p>
-                    <p>Missing Tags: Name, Owner, Project</p>
-                </div></body></html>
+        </tr>
+        <tr>
+            <td>Environment</td>
+            <td>1</td>
+        </tr>
+    </table>
+    <h2>Resource Details</h2>
+    <div class="resource compliant">
+        <h3>aws_instance "web_server"</h3>
+        <p>Path: resource_blocks/main.tf</p>
+        <p>Status: <span class="present">Compliant</span></p>
+        <table class="tag-table">
+            <tr>
+                <th>Tag</th>
+                <th>Status</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Name</td>
+                <td class="present">Present</td>
+                <td>WebServer</td>
+            </tr>
+            <tr>
+                <td>Environment</td>
+                <td class="present">Present</td>
+                <td>Production</td>
+            </tr>
+            <tr>
+                <td>Owner</td>
+                <td class="present">Present</td>
+                <td>DevOps</td>
+            </tr>
+            <tr>
+                <td>Project</td>
+                <td class="present">Present</td>
+                <td>Website</td>
+            </tr>
+        </table>
+    </div>
+    <div class="resource non-compliant">
+        <h3>aws_s3_bucket "data_bucket"</h3>
+        <p>Path: resource_blocks/main.tf</p>
+        <p>Status: <span class="missing">Non-compliant</span></p>
+        <table class="tag-table">
+            <tr>
+                <th>Tag</th>
+                <th>Status</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Name</td>
+                <td class="present">Present</td>
+                <td>DataBucket</td>
+            </tr>
+            <tr>
+                <td>Environment</td>
+                <td class="missing">Missing</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Owner</td>
+                <td class="missing">Missing</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Project</td>
+                <td class="missing">Missing</td>
+                <td>-</td>
+            </tr>
+        </table>
+    </div>
+    <div class="resource compliant">
+        <h3>aws_vpc "main"</h3>
+        <p>Path: resource_blocks/main.tf</p>
+        <p>Status: <span class="present">Compliant</span></p>
+        <table class="tag-table">
+            <tr>
+                <th>Tag</th>
+                <th>Status</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Name</td>
+                <td class="present">Present</td>
+                <td>MainVPC</td>
+            </tr>
+            <tr>
+                <td>Environment</td>
+                <td class="present">Present</td>
+                <td>Production</td>
+            </tr>
+            <tr>
+                <td>Owner</td>
+                <td class="present">Present</td>
+                <td>Network</td>
+            </tr>
+            <tr>
+                <td>Project</td>
+                <td class="present">Present</td>
+                <td>Infrastructure</td>
+            </tr>
+        </table>
+    </div>
+    <div class="resource exempt">
+        <h3>aws_security_group "allow_http"</h3>
+        <p>Path: resource_blocks/main.tf</p>
+        <p>Status: <span class="exempt-tag">Exempt</span></p>
+        <p class="exemption-reason">Reason: Security groups are exempt from tagging requirements</p>
+        <table class="tag-table">
+            <tr>
+                <th>Tag</th>
+                <th>Status</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Name</td>
+                <td class="exempt-tag">Exempt</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Environment</td>
+                <td class="exempt-tag">Exempt</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Owner</td>
+                <td class="exempt-tag">Exempt</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Project</td>
+                <td class="exempt-tag">Exempt</td>
+                <td>-</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>
