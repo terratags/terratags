@@ -18,9 +18,19 @@
 
 ## Installation
 
+### Using Go
+
 ```bash
 go install github.com/terratags/terratags@latest
 ```
+
+### Using Homebrew
+
+```bash
+brew install terratags/tap/terratags
+```
+
+See [installation docs](docs/installation.md) for more options.
 
 ## Usage
 

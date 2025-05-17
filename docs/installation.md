@@ -22,6 +22,21 @@ sudo mv terratags /usr/local/bin/
 
 Download the appropriate .zip file from the releases page, extract it, and add the location to your PATH.
 
+## Homebrew Installation (macOS and Linux)
+
+Terratags can be installed using Homebrew:
+
+```bash
+brew tap terratags/tap
+brew install terratags
+```
+
+Or in a single command:
+
+```bash
+brew install terratags/tap/terratags
+```
+
 ## Go Installation (Alternative)
 
 If you have Go installed, you can also install Terratags using Go's package manager:

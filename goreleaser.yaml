@@ -38,3 +38,17 @@ changelog:
       - '^ci:'
       - Merge pull request
       - Merge branch
+
+brews:
+  - name: terratags
+    homepage: "https://github.com/terratags/terratags"
+    description: "A tool for validating tags on AWS resources in Terraform configurations"
+    license: "MIT"
+    tap:
+      owner: terratags
+      name: homebrew-tap
+    folder: Formula
+    install: |
+      bin.install "terratags"
+    test: |
+      system "#{bin}/terratags -version"
