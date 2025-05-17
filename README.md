@@ -15,6 +15,8 @@
 - Provides auto-remediation suggestions
 - Integrates with Terraform plan output
 - Tracks tag inheritance from provider default_tags
+- Detailed exemption tracking and reporting
+- Detailed exemption tracking and reporting
 
 ## Installation
 
@@ -218,9 +220,18 @@ jobs:
         run: terratags -config config.yaml -dir ./infra
 ```
 
-## Sample Report
+## Enhanced Reporting
 
-When you generate an HTML report with Terratags, it will look similar to this:
+Terratags now provides enhanced HTML reports with detailed information about tag compliance:
+
+- Visual indicators for compliant, non-compliant, and exempt resources
+- Detailed breakdown of tag status for each resource
+- Tracking of tag sources (resource-level vs provider default_tags)
+- Exemption details including reasons for exemptions
+- Summary statistics including exempt resources
+- Tag violation counts by tag name
+
+The HTML report provides a visual representation of tag compliance across your Terraform resources, making it easy to identify which resources need attention and track compliance metrics. You can view the generated HTML report in any web browser.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -231,7 +242,8 @@ When you generate an HTML report with Terratags, it will look similar to this:
 │ Summary:                                            │
 │ ✓ Total Resources: 4                                │
 │ ✓ Compliant Resources: 2                            │
-│ ✗ Non-compliant Resources: 2                        │
+│ ✗ Non-compliant Resources: 1                        │
+│ ⚠ Exempt Resources: 1                               │
 │                                                     │
 │ [████████████████████████████████--------] 50.0%     │
 │                                                     │
@@ -240,5 +252,3 @@ When you generate an HTML report with Terratags, it will look similar to this:
 │   Missing Tags: Environment, Owner, Project         │
 └─────────────────────────────────────────────────────┘
 ```
-
-The HTML report provides a visual representation of tag compliance across your Terraform resources, making it easy to identify which resources need attention and track compliance metrics. You can view the generated HTML report in any web browser.

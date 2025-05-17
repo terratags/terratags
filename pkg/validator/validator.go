@@ -1,7 +1,9 @@
 package validator
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"path/filepath"
 	"strings"
 	"time"
@@ -22,10 +24,11 @@ type TagViolation struct {
 
 // TagComplianceStats represents statistics about tag compliance
 type TagComplianceStats struct {
-	TotalResources     int
-	CompliantResources int
-	ExemptResources    int
-	ViolationsByTag    map[string]int
+	TotalResources           int
+	CompliantResources       int
+	FullyExemptResources     int
+	PartiallyExemptResources int
+	ViolationsByTag          map[string]int
 }
 
 // ValidateResources validates that all resources have the required tags
@@ -67,7 +70,8 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 
 		// Check for missing required tags
 		var missingTags []string
-		isExempt := false
+		var exemptTags []string
+		var nonExemptMissingTags []string
 		var exemptReason string
 
 		for _, requiredTag := range cfg.Required {
@@ -78,10 +82,15 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 					// Check if this resource is exempt from this tag requirement
 					exempt, reason := cfg.IsExemptFromTag(resource.Type, resource.Name, requiredTag)
 					if exempt {
-						isExempt = true
-						exemptReason = reason
+						exemptTags = append(exemptTags, requiredTag)
+						if exemptReason == "" {
+							exemptReason = reason
+						}
+						// Add to missingTags so it shows up in the report
+						missingTags = append(missingTags, requiredTag)
 					} else {
 						missingTags = append(missingTags, requiredTag)
+						nonExemptMissingTags = append(nonExemptMissingTags, requiredTag)
 						stats.ViolationsByTag[requiredTag]++
 					}
 				} else {
@@ -94,8 +103,22 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 			}
 		}
 
+		// Determine if the resource has any exemptions
+		isExempt := len(exemptTags) > 0
+
+		// Determine if the resource is fully exempt (all missing tags are exempt)
+		isFullyExempt := isExempt && len(nonExemptMissingTags) == 0 && len(missingTags) > 0
+
+		// Determine if the resource is partially exempt (some missing tags are exempt, but others aren't)
+		isPartiallyExempt := isExempt && len(nonExemptMissingTags) > 0
+
+		// If the resource has any missing tags (exempt or not), add it to violations
 		if len(missingTags) > 0 {
-			valid = false
+			// If there are any non-exempt missing tags, the resource is not fully compliant
+			if len(nonExemptMissingTags) > 0 {
+				valid = false
+			}
+
 			violations = append(violations, TagViolation{
 				ResourceType: resource.Type,
 				ResourceName: resource.Name,
@@ -104,9 +127,15 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 				IsExempt:     isExempt,
 				ExemptReason: exemptReason,
 			})
-		} else if isExempt {
-			stats.ExemptResources++
+
+			// Update statistics based on exemption status
+			if isFullyExempt {
+				stats.FullyExemptResources++
+			} else if isPartiallyExempt {
+				stats.PartiallyExemptResources++
+			}
 		} else {
+			// No missing tags, resource is compliant
 			stats.CompliantResources++
 		}
 	}
@@ -245,121 +274,287 @@ func SuggestProviderDefaultTagsUpdate(missingTags []string) string {
 	return sb.String()
 }
 
-// GenerateHTMLReport generates an HTML report of tag compliance
+// GenerateHTMLReport generates an enhanced HTML report of tag compliance using html/template with Bootstrap styling
 func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg *config.Config) string {
-	var sb strings.Builder
-
-	// HTML header
-	sb.WriteString(`<!DOCTYPE html>
-<html>
-<head>
-    <title>Terraform Tag Compliance Report</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .summary { margin-bottom: 20px; }
-        .progress-bar { 
-            width: 100%; 
-            background-color: #f3f3f3; 
-            border-radius: 5px; 
-            margin-bottom: 20px;
-        }
-        .progress { 
-            height: 30px; 
-            background-color: #4CAF50; 
-            border-radius: 5px; 
-            text-align: center;
-            line-height: 30px;
-            color: white;
-        }
-        .resource { margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        .compliant { background-color: #dff0d8; }
-        .non-compliant { background-color: #f2dede; }
-        .exempt { background-color: #fcf8e3; }
-        .tag-table { width: 100%; border-collapse: collapse; }
-        .tag-table th, .tag-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .tag-table th { background-color: #f2f2f2; }
-        .missing { color: red; }
-        .present { color: green; }
-        .exempt-tag { color: orange; }
-    </style>
-</head>
-<body>
-    <h1>Terraform Tag Compliance Report</h1>
-    <p>Generated on: ` + time.Now().Format("2006-01-02 15:04:05") + `</p>`)
-
-	// Summary statistics
+	// Calculate compliance percentage
 	compliancePercentage := 0.0
 	if stats.TotalResources > 0 {
 		compliancePercentage = float64(stats.CompliantResources) / float64(stats.TotalResources) * 100
 	}
 
-	sb.WriteString(fmt.Sprintf(`
-    <div class="summary">
-        <h2>Summary</h2>
-        <p>Total Resources: %d</p>
-        <p>Compliant Resources: %d</p>
-        <p>Non-compliant Resources: %d</p>
-        <p>Exempt Resources: %d</p>
-        <div class="progress-bar">
-            <div class="progress" style="width: %.1f%%;">%.1f%% Compliant</div>
+	// Define the template inline to avoid file I/O
+	const tmplStr = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Terraform Tag Compliance Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .header-logo { 
+            max-height: 60px; 
+            margin-right: 15px;
+        }
+        .github-link {
+            margin-left: auto;
+            text-decoration: none;
+        }
+        .progress { height: 30px; }
+        .exempt-tag { color: #fd7e14; }
+        .logo-svg {
+            height: 60px;
+            width: 60px;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <!-- Header with Logo and GitHub Link -->
+        <div class="d-flex align-items-center mb-4">
+            <svg class="logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+              <!-- Cloud shape representing infrastructure -->
+              <path d="M120,90 C130,75 150,75 160,85 C170,75 190,80 190,100 C190,115 175,120 160,120 
+                       C160,125 155,130 145,130 C135,130 90,130 80,130 C65,130 50,120 50,105 
+                       C50,90 65,80 80,85 C85,70 105,70 120,90 Z" 
+                    fill="#FFE0B2" stroke="#FF8C00" stroke-width="3"/>
+              
+              <!-- Tag symbol on the cloud -->
+              <path d="M100,100 L115,100 L115,115 L107.5,122 L100,115 Z" 
+                    fill="#FF8C00" stroke="#FF8C00" stroke-width="1"/>
+              <circle cx="107.5" cy="105" r="2" fill="#FFE0B2"/>
+              
+              <!-- Magnifying glass rim -->
+              <circle cx="70" cy="110" r="35" fill="none" stroke="#FF8C00" stroke-width="6"/>
+              
+              <!-- Magnifying glass handle -->
+              <line x1="95" y1="135" x2="120" y2="160" stroke="#FF8C00" stroke-width="10" stroke-linecap="round"/>
+              
+              <!-- Magnifying glass lens highlight -->
+              <circle cx="70" cy="110" r="28" fill="none" stroke="#FFE0B2" stroke-width="2" stroke-opacity="0.7"/>
+              
+              <!-- Scan lines in magnifying glass -->
+              <line x1="50" y1="110" x2="90" y2="110" stroke="#FF8C00" stroke-width="2" stroke-opacity="0.5"/>
+              <line x1="70" y1="90" x2="70" y2="130" stroke="#FF8C00" stroke-width="2" stroke-opacity="0.5"/>
+            </svg>
+            <h1 class="mb-0">Terraform Tag Compliance Report</h1>
+            <a href="https://github.com/terratags/terratags" class="github-link" target="_blank">
+                <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" width="32">
+            </a>
         </div>
-    </div>`,
-		stats.TotalResources, stats.CompliantResources,
-		stats.TotalResources-stats.CompliantResources-stats.ExemptResources,
-		stats.ExemptResources,
-		compliancePercentage, compliancePercentage))
+        
+        <p class="text-muted">Generated on: {{.GeneratedTime}}</p>
+        
+        <!-- Summary Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title h5 mb-0">Summary</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-center mb-3">
+                            <div class="card-body">
+                                <h3 class="h2">{{.Stats.TotalResources}}</h3>
+                                <p class="mb-0">Total Resources</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center mb-3 bg-success text-white">
+                            <div class="card-body">
+                                <h3 class="h2">{{.Stats.CompliantResources}}</h3>
+                                <p class="mb-0">Compliant</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center mb-3 bg-danger text-white">
+                            <div class="card-body">
+                                <h3 class="h2">{{.NonCompliantCount}}</h3>
+                                <p class="mb-0">Non-compliant</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center mb-3 bg-warning">
+                            <div class="card-body">
+                                <h3 class="h2">{{.TotalExemptResources}}</h3>
+                                <p class="mb-0">Exempt</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Exemption Details -->
+                {{if gt .TotalExemptResources 0}}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-warning">
+                                <h3 class="card-title h6 mb-0">Exemption Details</h3>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>Fully Exempt Resources:</span>
+                                            <span class="badge bg-warning">{{.Stats.FullyExemptResources}}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>Partially Exempt Resources:</span>
+                                            <span class="badge bg-warning">{{.Stats.PartiallyExemptResources}}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+                
+                <div class="progress mt-3">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{printf "%.1f" .CompliancePercentage}}%;" 
+                         aria-valuenow="{{printf "%.1f" .CompliancePercentage}}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                        {{printf "%.1f" .CompliancePercentage}}% Compliant
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Required Tags Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h2 class="card-title h5 mb-0">Required Tags</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {{range .RequiredTags}}
+                    <div class="col-md-3 mb-2">
+                        <span class="badge bg-primary">{{.}}</span>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Violations by Tag -->
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h2 class="card-title h5 mb-0">Violations by Tag</h2>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Tag</th>
+                            <th>Violations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range $tag, $count := .Stats.ViolationsByTag}}
+                        <tr>
+                            <td><code>{{$tag}}</code></td>
+                            <td>{{$count}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Non-compliant Resources with Collapsible Sections -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h2 class="card-title h5 mb-0">Non-compliant Resources</h2>
+            </div>
+            <div class="card-body">
+                {{if eq (len .Violations) 0}}
+                <div class="alert alert-success">All resources are compliant!</div>
+                {{else}}
+                <div class="accordion" id="resourceAccordion">
+                    {{range $index, $v := .Violations}}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{$index}}">
+                            <button class="accordion-button {{if $v.IsExempt}}bg-warning{{else}}bg-danger text-white{{end}} collapsed" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#collapse{{$index}}" 
+                                    aria-expanded="false" aria-controls="collapse{{$index}}">
+                                {{$v.ResourceType}} "{{$v.ResourceName}}"
+                                {{if $v.IsExempt}}
+                                <span class="badge bg-warning ms-2">EXEMPT</span>
+                                {{else}}
+                                <span class="badge bg-danger ms-2">{{len $v.MissingTags}} missing tags</span>
+                                {{end}}
+                            </button>
+                        </h2>
+                        <div id="collapse{{$index}}" class="accordion-collapse collapse" 
+                             aria-labelledby="heading{{$index}}" data-bs-parent="#resourceAccordion">
+                            <div class="accordion-body">
+                                <p><strong>Path:</strong> {{$v.ResourcePath}}</p>
+                                {{if $v.IsExempt}}
+                                <p><strong>Status:</strong> <span class="exempt-tag">EXEMPT</span> - {{$v.ExemptReason}}</p>
+                                {{else}}
+                                <p><strong>Missing Tags:</strong></p>
+                                <ul>
+                                    {{range $v.MissingTags}}
+                                    <li><code>{{.}}</code></li>
+                                    {{end}}
+                                </ul>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+        </div>
+        
+        <footer class="mt-4 text-center text-muted">
+            <p>Generated by <a href="https://github.com/terratags/terratags" target="_blank">Terratags</a></p>
+        </footer>
+    </div>
+</body>
+</html>`
 
-	// Required tags section
-	sb.WriteString(`<h2>Required Tags</h2>
-    <ul>`)
-	for _, tag := range cfg.Required {
-		sb.WriteString(fmt.Sprintf(`<li>%s</li>`, tag))
+	// Create template with a custom function for joining strings
+	tmpl, err := template.New("report").Funcs(template.FuncMap{
+		"join": strings.Join,
+	}).Parse(tmplStr)
+
+	if err != nil {
+		return fmt.Sprintf("Error parsing template: %v", err)
 	}
-	sb.WriteString(`</ul>`)
 
-	// Violations by tag
-	sb.WriteString(`<h2>Violations by Tag</h2>
-    <table class="tag-table">
-        <tr>
-            <th>Tag</th>
-            <th>Violations</th>
-        </tr>`)
-
-	for tag, count := range stats.ViolationsByTag {
-		sb.WriteString(fmt.Sprintf(`
-        <tr>
-            <td>%s</td>
-            <td>%d</td>
-        </tr>`, tag, count))
-	}
-	sb.WriteString(`</table>`)
-
-	// Non-compliant resources
-	sb.WriteString(`<h2>Non-compliant Resources</h2>`)
-
-	if len(violations) == 0 {
-		sb.WriteString(`<p>All resources are compliant!</p>`)
-	} else {
-		for _, v := range violations {
-			if v.IsExempt {
-				sb.WriteString(fmt.Sprintf(`
-                <div class="resource exempt">
-                    <h3>%s "%s"</h3>
-                    <p>Path: %s</p>
-                    <p>Status: <span class="exempt-tag">EXEMPT</span> - %s</p>
-                </div>`, v.ResourceType, v.ResourceName, v.ResourcePath, v.ExemptReason))
-			} else {
-				sb.WriteString(fmt.Sprintf(`
-                <div class="resource non-compliant">
-                    <h3>%s "%s"</h3>
-                    <p>Path: %s</p>
-                    <p>Missing Tags: %s</p>
-                </div>`, v.ResourceType, v.ResourceName, v.ResourcePath, strings.Join(v.MissingTags, ", ")))
-			}
-		}
+	// Prepare data for the template
+	data := struct {
+		GeneratedTime        string
+		Stats                TagComplianceStats
+		NonCompliantCount    int
+		TotalExemptResources int
+		CompliancePercentage float64
+		RequiredTags         []string
+		Violations           []TagViolation
+	}{
+		GeneratedTime:        time.Now().Format("2006-01-02 15:04:05"),
+		Stats:                stats,
+		NonCompliantCount:    stats.TotalResources - stats.CompliantResources - stats.FullyExemptResources - stats.PartiallyExemptResources,
+		TotalExemptResources: stats.FullyExemptResources + stats.PartiallyExemptResources,
+		CompliancePercentage: compliancePercentage,
+		RequiredTags:         cfg.Required,
+		Violations:           violations,
 	}
 
-	sb.WriteString(`</body></html>`)
+	// Create a buffer to store the rendered template
+	var buf bytes.Buffer
 
-	return sb.String()
+	// Execute the template
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Sprintf("Error executing template: %v", err)
+	}
+
+	return buf.String()
 }

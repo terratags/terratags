@@ -208,8 +208,10 @@ func main() {
 			stats.TotalResources,
 			float64(stats.CompliantResources)/float64(stats.TotalResources)*100)
 
-		if stats.ExemptResources > 0 {
-			fmt.Printf("%d resources exempt from validation\n", stats.ExemptResources)
+		totalExemptResources := stats.FullyExemptResources + stats.PartiallyExemptResources
+		if totalExemptResources > 0 {
+			fmt.Printf("%d resources exempt from validation (%d fully exempt, %d partially exempt)\n",
+				totalExemptResources, stats.FullyExemptResources, stats.PartiallyExemptResources)
 		}
 
 		fmt.Println("\nTag validation failed. Please fix the issues above.")

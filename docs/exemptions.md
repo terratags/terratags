@@ -45,6 +45,26 @@ exemptions:
 }
 ```
 
+## Exemption Reporting
+
+Exemptions are now tracked and reported in the HTML compliance reports. When a resource is exempt from tagging requirements:
+
+1. The resource is highlighted with a distinct color in the report
+2. The exemption reason is displayed with the resource details
+3. Exempt tags are clearly marked in the tag status table
+4. Exempt resources are counted separately in the compliance summary statistics
+
+This provides transparency into which resources have exemptions and why, making it easier to track and manage exemptions over time.
+
+### Example Exemption in Reports
+
+In the HTML reports, exempt resources are displayed with:
+
+- An "Exempt" status label
+- The specific reason for the exemption
+- Tags marked as "Exempt" rather than "Missing"
+- A different background color to distinguish them from compliant and non-compliant resources
+
 ## When to Use Exemptions
 
 Exemptions are useful in several scenarios:
