@@ -12,6 +12,10 @@ import (
 	"github.com/terratags/terratags/pkg/validator"
 )
 
+// version is set during build time using ldflags
+// Build with: go build -ldflags "-X main.version=0.1.0" -o terratags main.go
+var version = "dev"
+
 // Custom usage function to display both long and short forms of flags
 func printUsage() {
 	version, err := getVersion()
@@ -215,11 +219,12 @@ func main() {
 	}
 }
 
-// getVersion reads the version from the VERSION file
+// getVersion returns the version of the application
+// The version is set at build time using ldflags
+// Example: go build -ldflags "-X main.version=0.1.0" -o terratags main.go
 func getVersion() (string, error) {
-	data, err := os.ReadFile("VERSION")
-	if err != nil {
-		return "0.0.0", fmt.Errorf("failed to read VERSION file: %w", err)
+	if version != "" {
+		return version, nil
 	}
-	return strings.TrimSpace(string(data)), nil
+	return "dev", nil
 }

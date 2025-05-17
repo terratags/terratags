@@ -30,7 +30,8 @@ jobs:
     - name: Build binary
       run: |
         mkdir -p bin
-        go build -o bin/terratags .
+        COMMIT_SHA=$(git rev-parse --short HEAD)
+        go build -ldflags "-X main.version=dev-${COMMIT_SHA}" -o bin/terratags .
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
