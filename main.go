@@ -14,6 +14,11 @@ import (
 
 // Custom usage function to display both long and short forms of flags
 func printUsage() {
+	version, err := getVersion()
+	if err != nil {
+		version = "unknown"
+	}
+	fmt.Fprintf(os.Stderr, "Terratags v%s - AWS Resource Tag Validator for Terraform\n\n", version)
 	fmt.Fprintf(os.Stderr, "Usage: terratags [OPTIONS]\n\n")
 	fmt.Fprintf(os.Stderr, "Options:\n")
 	fmt.Fprintf(os.Stderr, "  --config, -c <file>       Path to the config file (JSON/YAML) containing required tag keys\n")
@@ -24,6 +29,7 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "  --remediate, -re          Show auto-remediation suggestions for non-compliant resources\n")
 	fmt.Fprintf(os.Stderr, "  --exemptions, -e <file>   Path to exemptions file (JSON/YAML)\n")
 	fmt.Fprintf(os.Stderr, "  --help, -h                Show this help message\n")
+	fmt.Fprintf(os.Stderr, "  --version, -V             Show version information\n")
 }
 
 func main() {
@@ -36,6 +42,7 @@ func main() {
 		autoRemediate  bool
 		exemptionsFile string
 		showHelp       bool
+		showVersion    bool
 	)
 
 	// Define flags with both long and short forms
@@ -63,10 +70,24 @@ func main() {
 	flag.BoolVar(&showHelp, "help", false, "Show help message")
 	flag.BoolVar(&showHelp, "h", false, "Show help message")
 
+	flag.BoolVar(&showVersion, "version", false, "Show version information")
+	flag.BoolVar(&showVersion, "V", false, "Show version information")
+
 	// Override default usage function
 	flag.Usage = printUsage
 
 	flag.Parse()
+
+	// Show version if requested
+	if showVersion {
+		version, err := getVersion()
+		if err != nil {
+			fmt.Printf("Error reading version: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Terratags v%s\n", version)
+		os.Exit(0)
+	}
 
 	// Show help if requested or if no arguments were provided
 	if showHelp || len(os.Args) <= 1 {
@@ -192,4 +213,13 @@ func main() {
 	} else {
 		fmt.Println("All resources have the required tags!")
 	}
+}
+
+// getVersion reads the version from the VERSION file
+func getVersion() (string, error) {
+	data, err := os.ReadFile("VERSION")
+	if err != nil {
+		return "0.0.0", fmt.Errorf("failed to read VERSION file: %w", err)
+	}
+	return strings.TrimSpace(string(data)), nil
 }
