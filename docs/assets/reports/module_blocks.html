@@ -2,167 +2,222 @@
 <html>
 <head>
     <title>Terraform Tag Compliance Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .summary { margin-bottom: 20px; }
-        .progress-bar { 
-            width: 100%; 
-            background-color: #f3f3f3; 
-            border-radius: 5px; 
-            margin-bottom: 20px;
+        .header-logo { 
+            max-height: 60px; 
+            margin-right: 15px;
         }
-        .progress { 
-            height: 30px; 
-            background-color: #4CAF50; 
-            border-radius: 5px; 
-            text-align: center;
-            line-height: 30px;
-            color: white;
+        .github-link {
+            margin-left: auto;
+            text-decoration: none;
         }
-        .resource { margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        .compliant { background-color: #dff0d8; }
-        .non-compliant { background-color: #f2dede; }
-        .exempt { background-color: #fcf8e3; }
-        .tag-table { width: 100%; border-collapse: collapse; }
-        .tag-table th, .tag-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .tag-table th { background-color: #f2f2f2; }
-        .missing { color: red; }
-        .present { color: green; }
-        .exempt-tag { color: orange; }
-        .exemption-reason { font-style: italic; color: #666; }
+        .progress { height: 30px; }
+        .exempt-tag { color: #fd7e14; }
+        .logo-svg {
+            height: 60px;
+            width: 60px;
+            margin-right: 15px;
+        }
     </style>
 </head>
-<body>
-    <h1>Terraform Tag Compliance Report</h1>
-    <p>Generated on: 2025-05-16 14:09:34</p>
-    <div class="summary">
-        <h2>Summary</h2>
-        <p>Total Resources: 3</p>
-        <p>Compliant Resources: 2</p>
-        <p>Non-compliant Resources: 1</p>
-        <p>Exempt Resources: 0</p>
-        <div class="progress-bar">
-            <div class="progress" style="width: 66.7%;">66.7% Compliant</div>
+<body class="bg-light">
+    <div class="container py-4">
+        
+        <div class="d-flex align-items-center mb-4">
+            <svg class="logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+              
+              <path d="M120,90 C130,75 150,75 160,85 C170,75 190,80 190,100 C190,115 175,120 160,120 
+                       C160,125 155,130 145,130 C135,130 90,130 80,130 C65,130 50,120 50,105 
+                       C50,90 65,80 80,85 C85,70 105,70 120,90 Z" 
+                    fill="#FFE0B2" stroke="#FF8C00" stroke-width="3"/>
+              
+              
+              <path d="M100,100 L115,100 L115,115 L107.5,122 L100,115 Z" 
+                    fill="#FF8C00" stroke="#FF8C00" stroke-width="1"/>
+              <circle cx="107.5" cy="105" r="2" fill="#FFE0B2"/>
+              
+              
+              <circle cx="70" cy="110" r="35" fill="none" stroke="#FF8C00" stroke-width="6"/>
+              
+              
+              <line x1="95" y1="135" x2="120" y2="160" stroke="#FF8C00" stroke-width="10" stroke-linecap="round"/>
+              
+              
+              <circle cx="70" cy="110" r="28" fill="none" stroke="#FFE0B2" stroke-width="2" stroke-opacity="0.7"/>
+              
+              
+              <line x1="50" y1="110" x2="90" y2="110" stroke="#FF8C00" stroke-width="2" stroke-opacity="0.5"/>
+              <line x1="70" y1="90" x2="70" y2="130" stroke="#FF8C00" stroke-width="2" stroke-opacity="0.5"/>
+            </svg>
+            <h1 class="mb-0">Terraform Tag Compliance Report</h1>
+            <a href="https://github.com/terratags/terratags" class="github-link" target="_blank">
+                <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" width="32">
+            </a>
         </div>
-    </div>
-    <h2>Required Tags</h2>
-    <ul>
-        <li>Name</li>
-        <li>Environment</li>
-        <li>Owner</li>
-        <li>Project</li>
-    </ul>
-    <h2>Violations by Tag</h2>
-    <table class="tag-table">
-        <tr>
-            <th>Tag</th>
-            <th>Violations</th>
-        </tr>
-        <tr>
-            <td>Owner</td>
-            <td>1</td>
-        </tr>
-        <tr>
-            <td>Project</td>
-            <td>1</td>
-        </tr>
-    </table>
-    <h2>Resource Details</h2>
-    <div class="resource compliant">
-        <h3>module "vpc"</h3>
-        <p>Path: module_blocks/main.tf</p>
-        <p>Status: <span class="present">Compliant</span></p>
-        <table class="tag-table">
-            <tr>
-                <th>Tag</th>
-                <th>Status</th>
-                <th>Value</th>
-            </tr>
-            <tr>
-                <td>Name</td>
-                <td class="present">Present</td>
-                <td>MainVPC</td>
-            </tr>
-            <tr>
-                <td>Environment</td>
-                <td class="present">Present</td>
-                <td>Production</td>
-            </tr>
-            <tr>
-                <td>Owner</td>
-                <td class="present">Present</td>
-                <td>Network</td>
-            </tr>
-            <tr>
-                <td>Project</td>
-                <td class="present">Present</td>
-                <td>Infrastructure</td>
-            </tr>
-        </table>
-    </div>
-    <div class="resource non-compliant">
-        <h3>module "ec2_instance"</h3>
-        <p>Path: module_blocks/main.tf</p>
-        <p>Status: <span class="missing">Non-compliant</span></p>
-        <table class="tag-table">
-            <tr>
-                <th>Tag</th>
-                <th>Status</th>
-                <th>Value</th>
-            </tr>
-            <tr>
-                <td>Name</td>
-                <td class="present">Present</td>
-                <td>WebServer</td>
-            </tr>
-            <tr>
-                <td>Environment</td>
-                <td class="present">Present</td>
-                <td>Production</td>
-            </tr>
-            <tr>
-                <td>Owner</td>
-                <td class="missing">Missing</td>
-                <td>-</td>
-            </tr>
-            <tr>
-                <td>Project</td>
-                <td class="missing">Missing</td>
-                <td>-</td>
-            </tr>
-        </table>
-    </div>
-    <div class="resource compliant">
-        <h3>module "s3_bucket"</h3>
-        <p>Path: module_blocks/main.tf</p>
-        <p>Status: <span class="present">Compliant</span></p>
-        <table class="tag-table">
-            <tr>
-                <th>Tag</th>
-                <th>Status</th>
-                <th>Value</th>
-            </tr>
-            <tr>
-                <td>Name</td>
-                <td class="present">Present</td>
-                <td>S3Bucket</td>
-            </tr>
-            <tr>
-                <td>Environment</td>
-                <td class="present">Present</td>
-                <td>Production</td>
-            </tr>
-            <tr>
-                <td>Owner</td>
-                <td class="present">Present</td>
-                <td>DataTeam</td>
-            </tr>
-            <tr>
-                <td>Project</td>
-                <td class="present">Present</td>
-                <td>DataLake</td>
-            </tr>
-        </table>
+        
+        <p class="text-muted">Generated on: 2025-05-17 11:39:55</p>
+        
+        
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title h5 mb-0">Summary</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-center mb-3">
+                            <div class="card-body">
+                                <h3 class="h2">3</h3>
+                                <p class="mb-0">Total Resources</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center mb-3 bg-success text-white">
+                            <div class="card-body">
+                                <h3 class="h2">2</h3>
+                                <p class="mb-0">Compliant</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center mb-3 bg-danger text-white">
+                            <div class="card-body">
+                                <h3 class="h2">1</h3>
+                                <p class="mb-0">Non-compliant</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center mb-3 bg-warning">
+                            <div class="card-body">
+                                <h3 class="h2">0</h3>
+                                <p class="mb-0">Exempt</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                
+                
+                <div class="progress mt-3">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: 66.7%;" 
+                         aria-valuenow="66.7" 
+                         aria-valuemin="0" aria-valuemax="100">
+                        66.7% Compliant
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h2 class="card-title h5 mb-0">Required Tags</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    
+                    <div class="col-md-3 mb-2">
+                        <span class="badge bg-primary">Name</span>
+                    </div>
+                    
+                    <div class="col-md-3 mb-2">
+                        <span class="badge bg-primary">Environment</span>
+                    </div>
+                    
+                    <div class="col-md-3 mb-2">
+                        <span class="badge bg-primary">Owner</span>
+                    </div>
+                    
+                    <div class="col-md-3 mb-2">
+                        <span class="badge bg-primary">Project</span>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h2 class="card-title h5 mb-0">Violations by Tag</h2>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Tag</th>
+                            <th>Violations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td><code>Owner</code></td>
+                            <td>1</td>
+                        </tr>
+                        
+                        <tr>
+                            <td><code>Project</code></td>
+                            <td>1</td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h2 class="card-title h5 mb-0">Non-compliant Resources</h2>
+            </div>
+            <div class="card-body">
+                
+                <div class="accordion" id="resourceAccordion">
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading0">
+                            <button class="accordion-button bg-danger text-white collapsed" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#collapse0" 
+                                    aria-expanded="false" aria-controls="collapse0">
+                                module "ec2_instance"
+                                
+                                <span class="badge bg-danger ms-2">2 missing tags</span>
+                                
+                            </button>
+                        </h2>
+                        <div id="collapse0" class="accordion-collapse collapse" 
+                             aria-labelledby="heading0" data-bs-parent="#resourceAccordion">
+                            <div class="accordion-body">
+                                <p><strong>Path:</strong> examples/module_blocks/main.tf</p>
+                                
+                                <p><strong>Missing Tags:</strong></p>
+                                <ul>
+                                    
+                                    <li><code>Owner</code></li>
+                                    
+                                    <li><code>Project</code></li>
+                                    
+                                </ul>
+                                
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        <footer class="mt-4 text-center text-muted">
+            <p>Generated by <a href="https://github.com/terratags/terratags" target="_blank">Terratags</a></p>
+        </footer>
     </div>
 </body>
 </html>
