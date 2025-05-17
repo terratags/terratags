@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Terraform Tag Compliance Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .summary { margin-bottom: 20px; }
+        .progress-bar { 
+            width: 100%; 
+            background-color: #f3f3f3; 
+            border-radius: 5px; 
+            margin-bottom: 20px;
+        }
+        .progress { 
+            height: 30px; 
+            background-color: #4CAF50; 
+            border-radius: 5px; 
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+        .resource { margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .compliant { background-color: #dff0d8; }
+        .non-compliant { background-color: #f2dede; }
+        .exempt { background-color: #fcf8e3; }
+        .tag-table { width: 100%; border-collapse: collapse; }
+        .tag-table th, .tag-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .tag-table th { background-color: #f2f2f2; }
+        .missing { color: red; }
+        .present { color: green; }
+        .exempt-tag { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Terraform Tag Compliance Report</h1>
+    <p>Generated on: 2025-05-17 09:10:47</p>
+    <div class="summary">
+        <h2>Summary</h2>
+        <p>Total Resources: 4</p>
+        <p>Compliant Resources: 2</p>
+        <p>Non-compliant Resources: 1</p>
+        <p>Exempt Resources: 1</p>
+        <div class="progress-bar">
+            <div class="progress" style="width: 50.0%;">50.0% Compliant</div>
+        </div>
+    </div><h2>Required Tags</h2>
+    <ul><li>Name</li><li>Owner</li><li>Project</li></ul><h2>Violations by Tag</h2>
+    <table class="tag-table">
+        <tr>
+            <th>Tag</th>
+            <th>Violations</th>
+        </tr>
+        <tr>
+            <td>Name</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td>Owner</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td>Project</td>
+            <td>1</td>
+        </tr></table><h2>Non-compliant Resources</h2>
+                <div class="resource non-compliant">
+                    <h3>aws_security_group "allow_http"</h3>
+                    <p>Path: resource_blocks/main.tf</p>
+                    <p>Missing Tags: Name, Owner, Project</p>
+                </div></body></html>
