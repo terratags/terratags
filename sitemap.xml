@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://terratags.github.io/terratags/</loc>
+         <lastmod>2025-05-17</lastmod>
+    </url>
+    <url>
+         <loc>https://terratags.github.io/terratags/ci-cd/</loc>
+         <lastmod>2025-05-17</lastmod>
+    </url>
+    <url>
+         <loc>https://terratags.github.io/terratags/configuration/</loc>
+         <lastmod>2025-05-17</lastmod>
+    </url>
+    <url>
+         <loc>https://terratags.github.io/terratags/default-tags/</loc>
+         <lastmod>2025-05-17</lastmod>
+    </url>
+    <url>
+         <loc>https://terratags.github.io/terratags/examples/</loc>
+         <lastmod>2025-05-17</lastmod>
+    </url>
+    <url>
+         <loc>https://terratags.github.io/terratags/exemptions/</loc>
+         <lastmod>2025-05-17</lastmod>
+    </url>
+    <url>
+         <loc>https://terratags.github.io/terratags/installation/</loc>
+         <lastmod>2025-05-17</lastmod>
+    </url>
+    <url>
+         <loc>https://terratags.github.io/terratags/usage/</loc>
+         <lastmod>2025-05-17</lastmod>
+    </url>
+</urlset>
