@@ -27,13 +27,13 @@ terratags -config config.yaml -dir ./terraform
 
 ### Options
 
-- `-config`: Path to the config file (JSON/YAML) containing required tag keys (required)
-- `-dir`: Path to the Terraform directory to analyze (default: current directory)
-- `-verbose`: Enable verbose output
-- `-plan`: Path to Terraform plan JSON file to analyze
-- `-report`: Path to output HTML report file
-- `-remediate`: Show auto-remediation suggestions for non-compliant resources
-- `-exemptions`: Path to exemptions file (JSON/YAML)
+- `-config`, `-c`: Path to the config file (JSON/YAML) containing required tag keys (required)
+- `-dir`, `-d`: Path to the Terraform directory to analyze (default: current directory)
+- `-verbose`, `-v`: Enable verbose output
+- `-plan`, `-p`: Path to Terraform plan JSON file to analyze
+- `-report`, `-r`: Path to output HTML report file
+- `-remediate`, `-m`: Show auto-remediation suggestions for non-compliant resources
+- `-exemptions`, `-e`: Path to exemptions file (JSON/YAML)
 - `-version`, `-V`: Show version information
 
 ## Configuration
@@ -203,14 +203,14 @@ When you generate an HTML report with Terratags, it will look similar to this:
 ┌─────────────────────────────────────────────────────┐
 │           Terraform Tag Compliance Report           │
 ├─────────────────────────────────────────────────────┤
-│ Generated on: 2025-05-16                            │
+│ Generated on: 2025-05-16                           │
 │                                                     │
 │ Summary:                                            │
 │ ✓ Total Resources: 4                                │
 │ ✓ Compliant Resources: 2                            │
 │ ✗ Non-compliant Resources: 2                        │
 │                                                     │
-│ [████████████████████████████████--------] 50.0%    │
+│ [████████████████████████████████--------] 50.0%     │
 │                                                     │
 │ Non-compliant Resources:                            │
 │ ✗ aws_s3_bucket "data_bucket"                       │
