@@ -37,9 +37,11 @@ terratags -config config.yaml -dir ./terraform
 
 ## Configuration
 
-### Required Tags
+### Required Tags Configuration
 
-Create a YAML or JSON file with the required tags:
+Terratags requires a configuration file that specifies which tags must be present on your AWS resources. This file can be in either YAML or JSON format.
+
+#### YAML Format
 
 ```yaml
 required_tags:
@@ -49,9 +51,32 @@ required_tags:
   - Project
 ```
 
-### Exemptions
+#### JSON Format
 
-Create a YAML or JSON file with exemptions:
+```json
+{
+  "required_tags": [
+    "Name",
+    "Environment",
+    "Owner",
+    "Project"
+  ]
+}
+```
+
+### Exemptions Configuration
+
+Exemptions allow you to exclude specific resources or resource types from certain tag requirements. Create a YAML or JSON file with your exemptions.
+
+#### Exemption Fields
+
+- `resource_type`: The AWS resource type (e.g., aws_s3_bucket, aws_instance)
+- `resource_name`: The name of the specific resource to exempt. Use "*" to exempt all resources of the specified type
+- `exempt_tags`: List of tags that are not required for this resource
+- `reason`: A description explaining why this exemption exists
+- `expires_at`: Optional date when this exemption should expire (YYYY-MM-DD format)
+
+#### YAML Example
 
 ```yaml
 exemptions:
@@ -60,7 +85,52 @@ exemptions:
     exempt_tags: [Owner, Project]
     reason: "Legacy bucket used for system logs only"
     expires_at: "2025-12-31"
+  
+  - resource_type: aws_dynamodb_table
+    resource_name: "*"
+    exempt_tags: [Environment]
+    reason: "DynamoDB tables use environment from provider default_tags"
+    expires_at: "2026-01-15"
 ```
+
+### Provider Default Tags Support
+
+Terratags integrates with AWS provider's `default_tags` feature. When you define default tags in your AWS provider configuration, Terratags will recognize these tags and consider them when validating resources.
+
+#### How Default Tags Work
+
+1. Tags defined in the AWS provider's `default_tags` block are automatically applied to all resources created by that provider
+2. Terratags tracks tag inheritance from provider default_tags to individual resources
+3. Resources only need to specify tags not covered by default_tags
+4. Default tags can be overridden at the resource level if needed
+
+#### Example with Default Tags
+
+```terraform
+provider "aws" {
+  region = "us-west-2"
+  
+  default_tags {
+    tags = {
+      Environment = "dev"
+      Owner       = "team-a"
+      Project     = "demo"
+    }
+  }
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-12345678"
+  instance_type = "t2.micro"
+  
+  # Only need to specify Name tag, as other required tags come from default_tags
+  tags = {
+    Name = "example-instance"
+  }
+}
+```
+
+In this example, the AWS instance will have all four required tags: `Name` from the resource-level tags, and `Environment`, `Owner`, and `Project` from the provider's default_tags.
 
 ## Examples
 
@@ -126,7 +196,3 @@ jobs:
       - name: Validate Tags
         run: terratags -config config.yaml -dir ./terraform
 ```
-
-## License
-
-MIT
