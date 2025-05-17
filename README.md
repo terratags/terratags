@@ -34,6 +34,7 @@ terratags -config config.yaml -dir ./terraform
 - `-report`: Path to output HTML report file
 - `-remediate`: Show auto-remediation suggestions for non-compliant resources
 - `-exemptions`: Path to exemptions file (JSON/YAML)
+- `-version`, `-V`: Show version information
 
 ## Configuration
 
@@ -188,7 +189,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.20'
+          go-version: '1.24'
           
       - name: Install Terratags
         run: go install github.com/terratags/terratags@latest
