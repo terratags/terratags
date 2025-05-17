@@ -1,4 +1,8 @@
-# Terratags
+<p align="center">
+  <img src="assets/terratags-logo.svg" alt="Terratags Logo" width="200" height="200">
+</p>
+
+<h1 align="center">Terratags</h1>
 
 Terratags is a tool for validating tags on AWS resources in Terraform configurations.
 

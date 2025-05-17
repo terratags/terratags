@@ -1,0 +1,69 @@
+name: Update AWS Taggable Resources
+
+on:
+  schedule:
+    # Run every Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    # Allow manual triggering
+
+env:
+  TERRAFORM_VERSION: '1.12.0'
+
+jobs:
+  update-resources:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Run update_resources.go script
+        run: go run scripts/update_resources.go
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          if [[ -n $(git status -s pkg/parser/aws_taggable_resources.go) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure Git
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Commit changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git add pkg/parser/aws_taggable_resources.go
+          git commit -m "chore: update AWS taggable resources list [skip ci]"
+
+      - name: Create Pull Request
+        if: steps.git-check.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: 'chore: update AWS taggable resources list'
+          body: |
+            This PR updates the AWS taggable resources list based on the latest AWS provider schema.
+            
+            This is an automated PR created by the weekly update-resources workflow.
+          branch: update-aws-resources
+          base: main
+          delete-branch: true
+          labels: |
+            automated
+            dependencies

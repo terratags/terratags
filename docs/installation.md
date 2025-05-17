@@ -1,6 +1,30 @@
 # Installation
 
-Terratags can be installed using Go's package manager:
+Terratags can be installed in multiple ways. You don't need to have Go installed to use Terratags.
+
+## Binary Installation (Recommended)
+
+The easiest way to install Terratags is to download a pre-built binary from the [GitHub Releases](https://github.com/terratags/terratags/releases) page:
+
+1. Download the appropriate binary for your operating system (Windows, macOS, or Linux)
+2. Extract the archive if necessary
+3. Move the binary to a directory in your PATH
+
+### Linux/macOS
+
+```bash
+# Example for Linux amd64
+curl -L https://github.com/terratags/terratags/releases/latest/download/terratags_linux_amd64.tar.gz | tar xz
+sudo mv terratags /usr/local/bin/
+```
+
+### Windows
+
+Download the appropriate .zip file from the releases page, extract it, and add the location to your PATH.
+
+## Go Installation (Alternative)
+
+If you have Go installed, you can also install Terratags using Go's package manager:
 
 ```bash
 go install github.com/terratags/terratags@latest
@@ -10,7 +34,6 @@ This will download and install the latest version of Terratags to your Go bin di
 
 ## Prerequisites
 
-- Go 1.18 or later
 - Terraform (for analyzing Terraform configurations)
 
 ## Verifying Installation
