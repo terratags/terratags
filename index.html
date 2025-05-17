@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terratags - AWS Resource Tag Validator for Terraform</title>
+    <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="Terratags is a tool for validating tags on AWS resources in Terraform configurations">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <a href="index.html">Terratags</a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="documentation.html">Documentation</a></li>
+                    <li><a href="examples.html">Examples</a></li>
+                    <li><a href="https://github.com/terratags/terratags" target="_blank">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section>
+            <h1>Terratags</h1>
+            <p class="lead">A powerful tool for validating tags on AWS resources in Terraform configurations.</p>
+            <p>Ensure consistent tagging across your infrastructure and maintain compliance with organizational tagging policies.</p>
+            <a href="documentation.html" class="btn btn-primary">Get Started</a>
+            <a href="examples.html" class="btn">View Examples</a>
+        </section>
+
+        <section>
+            <h2>Key Features</h2>
+            <div class="features">
+                <div class="feature-card">
+                    <h3>Tag Validation</h3>
+                    <p>Validates required tags on AWS resources to ensure compliance with your organization's tagging policies.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Default Tags Support</h3>
+                    <p>Supports AWS provider default_tags and tracks tag inheritance from provider to resources.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Module-Level Tags</h3>
+                    <p>Validates tags at the module level for consistent tagging across module resources.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Exemption Support</h3>
+                    <p>Supports exemptions for specific resources that may not require certain tags.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>HTML Reports</h3>
+                    <p>Generates detailed HTML reports of tag compliance across your infrastructure.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Auto-Remediation</h3>
+                    <p>Provides suggestions for fixing non-compliant resources automatically.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Quick Start</h2>
+            <h3>Installation</h3>
+            <pre><code>go install github.com/terratags/terratags@latest</code></pre>
+            
+            <h3>Basic Usage</h3>
+            <pre><code>terratags -config config.yaml -dir ./terraform</code></pre>
+            
+            <p>Check out the <a href="documentation.html">documentation</a> for more detailed information on configuration and usage.</p>
+        </section>
+
+        <section>
+            <h2>Why Use Terratags?</h2>
+            <p>Consistent tagging is crucial for:</p>
+            <ul>
+                <li>Cost allocation and tracking</li>
+                <li>Resource ownership identification</li>
+                <li>Environment classification</li>
+                <li>Security and compliance requirements</li>
+                <li>Automation and resource management</li>
+            </ul>
+            <p>Terratags helps enforce these tagging standards across your infrastructure, ensuring that all resources are properly tagged according to your organization's policies.</p>
+        </section>
+
+        <section>
+            <h2>Sample Report</h2>
+            <div class="report-preview">┌─────────────────────────────────────────────────────┐
+│           Terraform Tag Compliance Report           │
+├─────────────────────────────────────────────────────┤
+│ Generated on: 2025-05-16                           │
+│                                                     │
+│ Summary:                                            │
+│ ✓ Total Resources: 4                                │
+│ ✓ Compliant Resources: 2                            │
+│ ✗ Non-compliant Resources: 2                        │
+│                                                     │
+│ [████████████████████████████████--------] 50.0%     │
+│                                                     │
+│ Non-compliant Resources:                            │
+│ ✗ aws_s3_bucket "data_bucket"                       │
+│   Missing Tags: Environment, Owner, Project         │
+└─────────────────────────────────────────────────────┘</div>
+            <p>The HTML report provides a visual representation of tag compliance across your Terraform resources, making it easy to identify which resources need attention and track compliance metrics.</p>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div>
+                <p>&copy; 2025 Terratags</p>
+            </div>
+            <div class="footer-links">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="documentation.html">Documentation</a></li>
+                    <li><a href="examples.html">Examples</a></li>
+                    <li><a href="https://github.com/terratags/terratags" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

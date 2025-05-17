@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Terratags</title>
+    <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="Detailed documentation for Terratags - AWS resource tag validator for Terraform">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <a href="index.html">Terratags</a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="documentation.html">Documentation</a></li>
+                    <li><a href="examples.html">Examples</a></li>
+                    <li><a href="https://github.com/terratags/terratags" target="_blank">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 2rem;">
+            <aside class="doc-nav">
+                <h3>Documentation</h3>
+                <ul>
+                    <li><a href="#installation">Installation</a></li>
+                    <li><a href="#usage">Usage</a></li>
+                    <li><a href="#options">Command Options</a></li>
+                    <li><a href="#configuration">Configuration</a>
+                        <ul>
+                            <li><a href="#required-tags">Required Tags</a></li>
+                            <li><a href="#exemptions">Exemptions</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#default-tags">Provider Default Tags</a></li>
+                    <li><a href="#ci-cd">CI/CD Integration</a></li>
+                    <li><a href="#reports">HTML Reports</a></li>
+                </ul>
+            </aside>
+
+            <div class="doc-content">
+                <h1>Terratags Documentation</h1>
+                
+                <section id="installation">
+                    <h2>Installation</h2>
+                    <p>Terratags can be installed using Go's package manager:</p>
+                    <pre><code>go install github.com/terratags/terratags@latest</code></pre>
+                    <p>This will download and install the latest version of Terratags to your Go bin directory.</p>
+                </section>
+                
+                <section id="usage">
+                    <h2>Usage</h2>
+                    <p>The basic usage of Terratags is:</p>
+                    <pre><code>terratags -config config.yaml -dir ./terraform</code></pre>
+                    <p>This command will analyze all Terraform files in the specified directory and validate that AWS resources have the required tags as defined in your configuration file.</p>
+                </section>
+                
+                <section id="options">
+                    <h2>Command Options</h2>
+                    <p>Terratags supports the following command-line options:</p>
+                    <ul>
+                        <li><code>-config</code>, <code>-c</code>: Path to the config file (JSON/YAML) containing required tag keys (required)</li>
+                        <li><code>-dir</code>, <code>-d</code>: Path to the Terraform directory to analyze (default: current directory)</li>
+                        <li><code>-verbose</code>, <code>-v</code>: Enable verbose output</li>
+                        <li><code>-plan</code>, <code>-p</code>: Path to Terraform plan JSON file to analyze</li>
+                        <li><code>-report</code>, <code>-r</code>: Path to output HTML report file</li>
+                        <li><code>-remediate</code>, <code>-m</code>: Show auto-remediation suggestions for non-compliant resources</li>
+                        <li><code>-exemptions</code>, <code>-e</code>: Path to exemptions file (JSON/YAML)</li>
+                        <li><code>-version</code>, <code>-V</code>: Show version information</li>
+                    </ul>
+                </section>
+                
+                <section id="configuration">
+                    <h2>Configuration</h2>
+                    
+                    <section id="required-tags">
+                        <h3>Required Tags Configuration</h3>
+                        <p>Terratags requires a configuration file that specifies which tags must be present on your AWS resources. This file can be in either YAML or JSON format.</p>
+                        
+                        <h4>YAML Format</h4>
+                        <pre><code>required_tags:
+  - Name
+  - Environment
+  - Owner
+  - Project</code></pre>
+                        
+                        <h4>JSON Format</h4>
+                        <pre><code>{
+  "required_tags": [
+    "Name",
+    "Environment",
+    "Owner",
+    "Project"
+  ]
+}</code></pre>
+                    </section>
+                    
+                    <section id="exemptions">
+                        <h3>Exemptions Configuration</h3>
+                        <p>Exemptions allow you to exclude specific resources or resource types from certain tag requirements. Create a YAML or JSON file with your exemptions.</p>
+                        
+                        <h4>Exemption Fields</h4>
+                        <ul>
+                            <li><code>resource_type</code>: The AWS resource type (e.g., aws_s3_bucket, aws_instance)</li>
+                            <li><code>resource_name</code>: The name of the specific resource to exempt. Use "*" to exempt all resources of the specified type</li>
+                            <li><code>exempt_tags</code>: List of tags that are not required for this resource</li>
+                            <li><code>reason</code>: A description explaining why this exemption exists</li>
+                        </ul>
+                        
+                        <h4>YAML Example</h4>
+                        <pre><code>exemptions:
+  - resource_type: aws_s3_bucket
+    resource_name: logs_bucket
+    exempt_tags: [Owner, Project]
+    reason: "Legacy bucket used for system logs only"
+  
+  - resource_type: aws_dynamodb_table
+    resource_name: "*"
+    exempt_tags: [Environment]
+    reason: "DynamoDB tables use environment from provider default_tags"</code></pre>
+                    </section>
+                </section>
+                
+                <section id="default-tags">
+                    <h2>Provider Default Tags Support</h2>
+                    <p>Terratags integrates with AWS provider's <code>default_tags</code> feature. When you define default tags in your AWS provider configuration, Terratags will recognize these tags and consider them when validating resources.</p>
+                    
+                    <h3>How Default Tags Work</h3>
+                    <ol>
+                        <li>Tags defined in the AWS provider's <code>default_tags</code> block are automatically applied to all resources created by that provider</li>
+                        <li>Terratags tracks tag inheritance from provider default_tags to individual resources</li>
+                        <li>Resources only need to specify tags not covered by default_tags</li>
+                        <li>Default tags can be overridden at the resource level if needed</li>
+                    </ol>
+                    
+                    <h3>Example with Default Tags</h3>
+                    <pre><code>provider "aws" {
+  region = "us-west-2"
+  
+  default_tags {
+    tags = {
+      Environment = "dev"
+      Owner       = "team-a"
+      Project     = "demo"
+    }
+  }
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-12345678"
+  instance_type = "t2.micro"
+  
+  # Only need to specify Name tag, as other required tags come from default_tags
+  tags = {
+    Name = "example-instance"
+  }
+}</code></pre>
+                    
+                    <p>In this example, the AWS instance will have all four required tags: <code>Name</code> from the resource-level tags, and <code>Environment</code>, <code>Owner</code>, and <code>Project</code> from the provider's default_tags.</p>
+                </section>
+                
+                <section id="ci-cd">
+                    <h2>Integration with CI/CD</h2>
+                    <p>Add Terratags to your CI/CD pipeline to enforce tag compliance:</p>
+                    
+                    <h3>GitHub Actions Example</h3>
+                    <pre><code># GitHub Actions example
+name: Validate Tags
+
+on:
+  pull_request:
+    paths:
+      - '**.tf'
+
+jobs:
+  validate-tags:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+          
+      - name: Install Terratags
+        run: go install github.com/terratags/terratags@latest
+        
+      - name: Validate Tags
+        run: terratags -config config.yaml -dir ./terraform</code></pre>
+                </section>
+                
+                <section id="reports">
+                    <h2>HTML Reports</h2>
+                    <p>Terratags can generate HTML reports that provide a visual representation of tag compliance across your Terraform resources.</p>
+                    
+                    <h3>Generating a Report</h3>
+                    <pre><code>terratags -config config.yaml -dir ./terraform -report report.html</code></pre>
+                    
+                    <h3>Sample Report</h3>
+                    <div class="report-preview">┌─────────────────────────────────────────────────────┐
+│           Terraform Tag Compliance Report           │
+├─────────────────────────────────────────────────────┤
+│ Generated on: 2025-05-16                           │
+│                                                     │
+│ Summary:                                            │
+│ ✓ Total Resources: 4                                │
+│ ✓ Compliant Resources: 2                            │
+│ ✗ Non-compliant Resources: 2                        │
+│                                                     │
+│ [████████████████████████████████--------] 50.0%     │
+│                                                     │
+│ Non-compliant Resources:                            │
+│ ✗ aws_s3_bucket "data_bucket"                       │
+│   Missing Tags: Environment, Owner, Project         │
+└─────────────────────────────────────────────────────┘</div>
+                    
+                    <p>The HTML report makes it easy to identify which resources need attention and track compliance metrics. You can view the generated HTML report in any web browser.</p>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div>
+                <p>&copy; 2025 Terratags</p>
+            </div>
+            <div class="footer-links">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="documentation.html">Documentation</a></li>
+                    <li><a href="examples.html">Examples</a></li>
+                    <li><a href="https://github.com/terratags/terratags" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
