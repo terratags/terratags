@@ -1,17 +1,9 @@
 name: Deploy MkDocs to GitHub Pages
 
-# This workflow builds documentation from the main branch and deploys it to gh-pages
-# - Source: docs/ directory and mkdocs.yml in the main branch
-# - Destination: Generated HTML/CSS/JS in the gh-pages branch
-# - Trigger: Any push to main that changes docs/ or mkdocs.yml
-
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
+    tags:
+      - 'v*'
 
 permissions:
   contents: write  # Needed to push to gh-pages branch
