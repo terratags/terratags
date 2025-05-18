@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
+	"github.com/terratags/terratags/pkg/logging"
 )
 
 // Resource represents a Terraform resource with its tags
@@ -28,7 +29,7 @@ type TagSource struct {
 }
 
 // ParseFile parses a Terraform file and extracts resources with their tags
-func ParseFile(path string) ([]Resource, error) {
+func ParseFile(path string, logLevel string) ([]Resource, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
@@ -47,31 +48,31 @@ func ParseFile(path string) ([]Resource, error) {
 	content2, diags := file.Body.Content(&hcl.BodySchema{
 		Blocks: []hcl.BlockHeaderSchema{
 			{
-				Type: "resource",
+				Type:       "resource",
 				LabelNames: []string{"type", "name"},
 			},
 			{
-				Type: "module",
+				Type:       "module",
 				LabelNames: []string{"name"},
 			},
 			// Allow other block types but don't process them
 			{
-				Type: "provider",
+				Type:       "provider",
 				LabelNames: []string{"name"},
 			},
 			{
-				Type: "data",
+				Type:       "data",
 				LabelNames: []string{"type", "name"},
 			},
 			{
 				Type: "locals",
 			},
 			{
-				Type: "variable",
+				Type:       "variable",
 				LabelNames: []string{"name"},
 			},
 			{
-				Type: "output",
+				Type:       "output",
 				LabelNames: []string{"name"},
 			},
 			{
@@ -82,7 +83,7 @@ func ParseFile(path string) ([]Resource, error) {
 
 	if diags.HasErrors() {
 		// If we still have errors, try a more permissive approach
-		fmt.Printf("Warning: Some blocks in %s couldn't be parsed, but we'll continue with what we can parse\n", path)
+		logging.Warn("Warning: Some blocks in %s couldn't be parsed, but we'll continue with what we can parse", path)
 	}
 
 	for _, block := range content2.Blocks {
@@ -90,28 +91,28 @@ func ParseFile(path string) ([]Resource, error) {
 		case "resource":
 			resourceType := block.Labels[0]
 			resourceName := block.Labels[1]
-			
+
 			// Check if this resource type supports tagging
 			if isTaggableResource(resourceType) {
-				tags := extractTagsFromContent(content, resourceType, resourceName)
+				tags := extractTagsFromContent(content, resourceType, resourceName, logLevel)
 				resources = append(resources, Resource{
-					Type: resourceType,
-					Name: resourceName,
-					Tags: tags,
-					Path: path,
+					Type:       resourceType,
+					Name:       resourceName,
+					Tags:       tags,
+					Path:       path,
 					TagSources: make(map[string]TagSource),
 				})
 			}
 		case "module":
 			moduleName := block.Labels[0]
 			// Extract module resources and their tags
-			moduleTags := extractModuleTagsFromContent(content, moduleName)
+			moduleTags := extractModuleTagsFromContent(content, moduleName, logLevel)
 			if len(moduleTags) > 0 {
 				resources = append(resources, Resource{
-					Type: "module",
-					Name: moduleName,
-					Tags: moduleTags,
-					Path: path,
+					Type:       "module",
+					Name:       moduleName,
+					Tags:       moduleTags,
+					Path:       path,
 					TagSources: make(map[string]TagSource),
 				})
 			}
@@ -131,92 +132,128 @@ func isTaggableResource(resourceType string) bool {
 }
 
 // extractTagsFromContent extracts tags directly from the file content
-func extractTagsFromContent(content []byte, resourceType, resourceName string) map[string]string {
+func extractTagsFromContent(content []byte, resourceType, resourceName, logLevel string) map[string]string {
 	tags := make(map[string]string)
-	
+
 	// Convert content to string
 	fileContent := string(content)
-	
+
 	// Find the resource block with proper handling of nested blocks
 	// This pattern matches the entire resource block including nested blocks
-	resourcePattern := fmt.Sprintf(`resource\s+"%s"\s+"%s"\s*{[\s\S]*?(?:^}|\n}|\r\n})`, 
+	resourcePattern := fmt.Sprintf(`resource\s+"%s"\s+"%s"\s*{[\s\S]*?(?:^}|\n}|\r\n})`,
 		regexp.QuoteMeta(resourceType), regexp.QuoteMeta(resourceName))
 	resourceRegex := regexp.MustCompile(`(?sm)` + resourcePattern)
 	resourceMatch := resourceRegex.FindString(fileContent)
-	
+
 	if resourceMatch != "" {
-		// Find the tags block within the resource
-		// Improved pattern to handle tags that might appear after nested blocks
-		tagsPattern := `tags\s*=\s*{([\s\S]*?)}`
-		tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
-		tagsMatch := tagsRegex.FindStringSubmatch(resourceMatch)
-		
-		if len(tagsMatch) > 1 {
-			fmt.Printf("Found tags attribute in %s %s\n", resourceType, resourceName)
-			
-			// Extract key-value pairs
-			tagContent := tagsMatch[1]
-			keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
-			keyValueRegex := regexp.MustCompile(keyValuePattern)
-			keyValueMatches := keyValueRegex.FindAllStringSubmatch(tagContent, -1)
-			
-			for _, match := range keyValueMatches {
-				if len(match) > 2 {
-					key := match[1]
-					value := match[2]
-					fmt.Printf("Found tag key: %s\n", key)
-					tags[key] = value
+		// Check if this is an AWSCC resource
+		isAWSCC := strings.HasPrefix(resourceType, "awscc_")
+
+		if isAWSCC {
+			// For AWSCC resources, tags are in the format: tags = [{key = "Key", value = "Value"}]
+			tagsPattern := `tags\s*=\s*\[([\s\S]*?)\]`
+			tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
+			tagsMatch := tagsRegex.FindStringSubmatch(resourceMatch)
+
+			if len(tagsMatch) > 1 {
+				logging.Debug("Found AWSCC tags attribute in %s %s", resourceType, resourceName)
+
+				// Extract key-value pairs from the list of maps format
+				tagContent := tagsMatch[1]
+				// Match each {key = "...", value = "..."} block
+				tagBlockPattern := `{[\s\S]*?key\s*=\s*["']?([^"'\s,}]*)["']?[\s\S]*?value\s*=\s*["']?([^"'\s,}]*)["']?[\s\S]*?}`
+				tagBlockRegex := regexp.MustCompile(`(?s)` + tagBlockPattern)
+				tagBlockMatches := tagBlockRegex.FindAllStringSubmatch(tagContent, -1)
+
+				for _, match := range tagBlockMatches {
+					if len(match) > 2 {
+						key := match[1]
+						value := match[2]
+						logging.Debug("Found AWSCC tag key: %s with value: %s", key, value)
+						tags[key] = value
+					}
 				}
+			} else {
+				logging.Debug("No tags attribute found in AWSCC resource %s %s", resourceType, resourceName)
 			}
 		} else {
-			fmt.Printf("No tags attribute found in %s %s\n", resourceType, resourceName)
+			// For AWS resources, tags are in the format: tags = {Key = "Value"}
+			tagsPattern := `tags\s*=\s*{([\s\S]*?)}`
+			tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
+			tagsMatch := tagsRegex.FindStringSubmatch(resourceMatch)
+
+			if len(tagsMatch) > 1 {
+				logging.Debug("Found tags attribute in %s %s", resourceType, resourceName)
+
+				// Extract key-value pairs
+				tagContent := tagsMatch[1]
+				keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
+				keyValueRegex := regexp.MustCompile(keyValuePattern)
+				keyValueMatches := keyValueRegex.FindAllStringSubmatch(tagContent, -1)
+
+				for _, match := range keyValueMatches {
+					if len(match) > 2 {
+						key := match[1]
+						value := match[2]
+						logging.Debug("Found tag key: %s", key)
+						tags[key] = value
+					}
+				}
+			} else {
+				logging.Debug("No tags attribute found in %s %s", resourceType, resourceName)
+			}
 		}
 	}
-	
+
 	return tags
 }
 
 // extractModuleTagsFromContent extracts module tags directly from the file content
-func extractModuleTagsFromContent(content []byte, moduleName string) map[string]string {
+func extractModuleTagsFromContent(content []byte, moduleName, logLevel string) map[string]string {
 	tags := make(map[string]string)
-	
+
 	// Convert content to string
 	fileContent := string(content)
-	
+
 	// Find the module block with proper handling of nested blocks
 	modulePattern := fmt.Sprintf(`module\s+"%s"\s*{[\s\S]*?(?:^}|\n}|\r\n})`, regexp.QuoteMeta(moduleName))
 	moduleRegex := regexp.MustCompile(`(?sm)` + modulePattern)
 	moduleMatch := moduleRegex.FindString(fileContent)
-	
+
 	if moduleMatch != "" {
 		// Find the tags block within the module
 		// Improved pattern to handle tags that might appear after nested blocks
 		tagsPattern := `tags\s*=\s*{([\s\S]*?)}`
 		tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
 		tagsMatch := tagsRegex.FindStringSubmatch(moduleMatch)
-		
+
 		if len(tagsMatch) > 1 {
+			logging.Debug("Found tags attribute in module %s", moduleName)
+
 			// Extract key-value pairs
 			tagContent := tagsMatch[1]
 			keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
 			keyValueRegex := regexp.MustCompile(keyValuePattern)
 			keyValueMatches := keyValueRegex.FindAllStringSubmatch(tagContent, -1)
-			
+
 			for _, match := range keyValueMatches {
 				if len(match) > 2 {
 					key := match[1]
 					value := match[2]
+					logging.Debug("Found module tag key: %s", key)
 					tags[key] = value
 				}
 			}
+		} else {
+			logging.Debug("No tags attribute found in module %s", moduleName)
 		}
 	}
-	
+
 	return tags
 }
 
 // ParseTerraformPlan parses a Terraform plan JSON file and extracts resources with their tags
-func ParseTerraformPlan(planPath string) ([]Resource, error) {
+func ParseTerraformPlan(planPath string, logLevel string) ([]Resource, error) {
 	// Read the plan file
 	planData, err := os.ReadFile(planPath)
 	if err != nil {
@@ -249,13 +286,13 @@ func ParseTerraformPlan(planPath string) ([]Resource, error) {
 			resourceName := nameParts[len(nameParts)-1]
 
 			// Extract tags from the "after" state
-			tags := extractTagsFromPlanResource(rc.Change.After)
+			tags := extractTagsFromPlanResource(rc.Change.After, logLevel)
 
 			resources = append(resources, Resource{
-				Type: rc.Type,
-				Name: resourceName,
-				Tags: tags,
-				Path: planPath,
+				Type:       rc.Type,
+				Name:       resourceName,
+				Tags:       tags,
+				Path:       planPath,
 				TagSources: make(map[string]TagSource),
 			})
 		}
@@ -265,14 +302,36 @@ func ParseTerraformPlan(planPath string) ([]Resource, error) {
 }
 
 // extractTagsFromPlanResource extracts tags from a resource in the plan
-func extractTagsFromPlanResource(resource map[string]interface{}) map[string]string {
+func extractTagsFromPlanResource(resource map[string]interface{}, logLevel string) map[string]string {
 	tags := make(map[string]string)
 
 	// Check if the resource has tags
 	if tagsInterface, ok := resource["tags"]; ok {
-		if tagsMap, ok := tagsInterface.(map[string]interface{}); ok {
+		// Check if this is an AWSCC resource (tags will be a list of maps with key/value pairs)
+		if tagsList, ok := tagsInterface.([]interface{}); ok {
+			// This is likely an AWSCC resource with tags as a list of maps
+			logging.Debug("Found AWSCC tags in plan resource")
+			for _, tagItem := range tagsList {
+				if tagMap, ok := tagItem.(map[string]interface{}); ok {
+					// Extract key and value from the map
+					if keyInterface, keyOk := tagMap["key"]; keyOk {
+						if valueInterface, valueOk := tagMap["value"]; valueOk {
+							if key, keyOk := keyInterface.(string); keyOk {
+								if value, valueOk := valueInterface.(string); valueOk {
+									logging.Debug("Found AWSCC tag key: %s with value: %s", key, value)
+									tags[key] = value
+								}
+							}
+						}
+					}
+				}
+			}
+		} else if tagsMap, ok := tagsInterface.(map[string]interface{}); ok {
+			// This is the standard AWS provider tags format (map of key/value)
+			logging.Debug("Found AWS tags in plan resource")
 			for k, v := range tagsMap {
 				if strValue, ok := v.(string); ok {
+					logging.Debug("Found tag key: %s", k)
 					tags[k] = strValue
 				}
 			}

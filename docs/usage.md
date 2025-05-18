@@ -105,3 +105,20 @@ The report includes:
 - List of compliant and non-compliant resources
 - Missing tags for each non-compliant resource
 - Summary statistics
+
+## Log Levels
+
+Terratags supports different log levels to control the verbosity of output:
+
+```bash
+terratags -config config.yaml -dir ./infra -log-level INFO
+```
+
+Available log levels:
+
+- `DEBUG`: Shows all debug information, including detailed tag discovery
+- `INFO`: Shows informational messages (same as using the `-verbose` flag)
+- `WARN`: Shows only warnings and errors
+- `ERROR`: Shows only errors (default)
+
+For backward compatibility, the `-verbose` flag is equivalent to `-log-level INFO`.

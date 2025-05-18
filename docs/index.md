@@ -18,6 +18,7 @@ Terratags helps enforce these tagging standards across your infrastructure, ensu
 
 - **Tag Validation**: Validates required tags on AWS resources
 - **Default Tags Support**: Supports AWS provider default_tags
+- **AWSCC Support**: Supports AWSCC provider tag format
 - **Module-Level Tags**: Supports module-level tags
 - **Exemption Support**: Supports exemptions for specific resources
 - **HTML Reports**: Generates HTML reports of tag compliance

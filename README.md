@@ -9,13 +9,13 @@
 
 - Validates required tags on AWS resources
 - Supports AWS provider default_tags
+- Supports AWSCC provider tag format
 - Supports module-level tags
 - Supports exemptions for specific resources
 - Generates HTML reports of tag compliance
 - Provides auto-remediation suggestions
 - Integrates with Terraform plan output
 - Tracks tag inheritance from provider default_tags
-- Detailed exemption tracking and reporting
 - Detailed exemption tracking and reporting
 
 ## Installation
@@ -55,10 +55,12 @@ terratags -config config.yaml -dir ./infra
 - `-config`, `-c`: Path to the config file (JSON/YAML) containing required tag keys (required)
 - `-dir`, `-d`: Path to the Terraform directory to analyze (default: current directory)
 - `-verbose`, `-v`: Enable verbose output
+- `-log-level`, `-l`: Set logging level: DEBUG, INFO, WARN, ERROR (default: ERROR)
 - `-plan`, `-p`: Path to Terraform plan JSON file to analyze
 - `-report`, `-r`: Path to output HTML report file
-- `-remediate`, `-m`: Show auto-remediation suggestions for non-compliant resources
+- `-remediate`, `-re`: Show auto-remediation suggestions for non-compliant resources
 - `-exemptions`, `-e`: Path to exemptions file (JSON/YAML)
+- `-help`, `-h`: Show help message
 - `-version`, `-V`: Show version information
 
 ## Configuration
@@ -116,6 +118,35 @@ exemptions:
     reason: "DynamoDB tables use environment from provider default_tags"
 ```
 
+### AWSCC Provider Support
+
+Terratags supports the AWS Cloud Control (AWSCC) provider's tag format, which differs from the standard AWS provider tag format.
+
+#### AWS vs AWSCC Tag Formats
+
+**AWS Provider** uses a map of key/value pairs:
+```hcl
+tags = {
+  Environment = "test"
+  Project     = "demo"
+}
+```
+
+**AWSCC Provider** uses a list of maps with `key` and `value` fields:
+```hcl
+tags = [{
+  key   = "Environment"
+  value = "test"
+}, {
+  key   = "Project"
+  value = "demo"
+}]
+```
+
+**Note:** AWSCC provider does not support the `default_tags` feature.
+
+See [AWSCC Support](docs/awscc_support.md) for more details.
+
 ### Provider Default Tags Support
 
 Terratags integrates with AWS provider's `default_tags` feature. When you define default tags in your AWS provider configuration, Terratags will recognize these tags and consider them when validating resources.
@@ -154,6 +185,33 @@ resource "aws_instance" "example" {
 ```
 
 In this example, the AWS instance will have all four required tags: `Name` from the resource-level tags, and `Environment`, `Owner`, and `Project` from the provider's default_tags.
+
+### AWSCC Provider Tag Support
+
+Terratags also supports the AWSCC provider's tag format, which differs from the standard AWS provider format.
+
+#### AWSCC Tag Format
+
+The AWSCC provider uses a list of maps with key/value pairs for tags:
+
+```terraform
+resource "awscc_apigateway_rest_api" "example" {
+  name        = "example-api"
+  description = "Example API"
+  
+  tags = [{
+    key   = "Environment"
+    value = "Production"
+  }, {
+    key   = "Project"
+    value = "Terratags"
+  }]
+}
+```
+
+**Note:** AWSCC provider does not support `default_tags`, so all required tags must be specified at the resource level.
+
+See [AWSCC Support documentation](docs/awscc_support.md) for more details.
 
 ## Examples
 

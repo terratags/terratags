@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/terratags/terratags/pkg/config"
+	"github.com/terratags/terratags/pkg/logging"
 	"github.com/terratags/terratags/pkg/parser"
 	"github.com/terratags/terratags/pkg/validator"
 )
@@ -27,7 +28,8 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "Options:\n")
 	fmt.Fprintf(os.Stderr, "  --config, -c <file>       Path to the config file (JSON/YAML) containing required tag keys\n")
 	fmt.Fprintf(os.Stderr, "  --dir, -d <directory>     Path to the Terraform directory to analyze (default: \".\")\n")
-	fmt.Fprintf(os.Stderr, "  --verbose, -v             Enable verbose output\n")
+	fmt.Fprintf(os.Stderr, "  --log-level, -l <level>   Set logging level: DEBUG, INFO, WARN, ERROR (default: ERROR)\n")
+	fmt.Fprintf(os.Stderr, "  --verbose, -v             Enable verbose output (same as --log-level=INFO)\n")
 	fmt.Fprintf(os.Stderr, "  --plan, -p <file>         Path to Terraform plan JSON file to analyze\n")
 	fmt.Fprintf(os.Stderr, "  --report, -r <file>       Path to output HTML report file\n")
 	fmt.Fprintf(os.Stderr, "  --remediate, -re          Show auto-remediation suggestions for non-compliant resources\n")
@@ -40,7 +42,7 @@ func main() {
 	var (
 		configFile     string
 		terraformDir   string
-		verbose        bool
+		logLevel       string
 		planFile       string
 		reportFile     string
 		autoRemediate  bool
@@ -56,8 +58,13 @@ func main() {
 	flag.StringVar(&terraformDir, "dir", ".", "Path to the Terraform directory to analyze")
 	flag.StringVar(&terraformDir, "d", ".", "Path to the Terraform directory to analyze")
 
-	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output")
-	flag.BoolVar(&verbose, "v", false, "Enable verbose output")
+	flag.StringVar(&logLevel, "log-level", "ERROR", fmt.Sprintf("Log level (options: %s)", strings.Join(logging.ValidLogLevels, ", ")))
+	flag.StringVar(&logLevel, "l", "ERROR", "Log level")
+
+	// Keep verbose flag for backward compatibility
+	var verbose bool
+	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output (same as --log-level=INFO)")
+	flag.BoolVar(&verbose, "v", false, "Enable verbose output (same as --log-level=INFO)")
 
 	flag.StringVar(&planFile, "plan", "", "Path to Terraform plan JSON file to analyze")
 	flag.StringVar(&planFile, "p", "", "Path to Terraform plan JSON file to analyze")
@@ -82,14 +89,25 @@ func main() {
 
 	flag.Parse()
 
+	// Handle verbose flag for backward compatibility
+	if verbose && logLevel == "ERROR" {
+		logLevel = "INFO"
+	}
+
+	// Initialize logging
+	if err := logging.Initialize(logLevel); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Show version if requested
 	if showVersion {
 		version, err := getVersion()
 		if err != nil {
-			fmt.Printf("Error reading version: %v\n", err)
+			logging.Error("Error reading version: %v", err)
 			os.Exit(1)
 		}
-		fmt.Printf("Terratags v%s\n", version)
+		logging.Print("Terratags v%s", version)
 		os.Exit(0)
 	}
 
@@ -100,7 +118,7 @@ func main() {
 	}
 
 	if configFile == "" {
-		fmt.Println("Error: Config file is required")
+		logging.Error("Error: Config file is required")
 		printUsage()
 		os.Exit(1)
 	}
@@ -108,7 +126,7 @@ func main() {
 	// Load configuration
 	cfg, err := config.LoadConfig(configFile)
 	if err != nil {
-		fmt.Printf("Error loading config: %v\n", err)
+		logging.Error("Error loading config: %v", err)
 		os.Exit(1)
 	}
 
@@ -116,18 +134,14 @@ func main() {
 	if exemptionsFile != "" {
 		exemptions, err := config.LoadExemptions(exemptionsFile)
 		if err != nil {
-			fmt.Printf("Error loading exemptions: %v\n", err)
+			logging.Error("Error loading exemptions: %v", err)
 			os.Exit(1)
 		}
 		cfg.Exemptions = exemptions
-		if verbose {
-			fmt.Printf("Loaded %d exemptions\n", len(exemptions))
-		}
+		logging.Info("Loaded %d exemptions", len(exemptions))
 	}
 
-	if verbose {
-		fmt.Printf("Loaded configuration with %d required tags\n", len(cfg.Required))
-	}
+	logging.Info("Loaded configuration with %d required tags", len(cfg.Required))
 
 	// Determine which validation to run
 	var valid bool
@@ -137,16 +151,12 @@ func main() {
 
 	if planFile != "" {
 		// Validate the Terraform plan
-		if verbose {
-			fmt.Printf("Validating Terraform plan: %s\n", planFile)
-		}
-		valid, violations, stats, resources = validator.ValidateTerraformPlan(planFile, cfg, verbose)
+		logging.Info("Validating Terraform plan: %s", planFile)
+		valid, violations, stats, resources = validator.ValidateTerraformPlan(planFile, cfg, logLevel)
 	} else {
 		// Validate the directory
-		if verbose {
-			fmt.Printf("Validating Terraform directory: %s\n", terraformDir)
-		}
-		valid, violations, stats, resources = validator.ValidateDirectory(terraformDir, cfg, verbose)
+		logging.Info("Validating Terraform directory: %s", terraformDir)
+		valid, violations, stats, resources = validator.ValidateDirectory(terraformDir, cfg, logLevel)
 	}
 
 	// Generate HTML report if requested
@@ -155,26 +165,26 @@ func main() {
 		reportDir := filepath.Dir(reportFile)
 		if reportDir != "." {
 			if err := os.MkdirAll(reportDir, 0755); err != nil {
-				fmt.Printf("Error creating report directory: %v\n", err)
+				logging.Error("Error creating report directory: %v", err)
 			}
 		}
 		if err := os.WriteFile(reportFile, []byte(reportContent), 0644); err != nil {
-			fmt.Printf("Error writing report file: %v\n", err)
+			logging.Error("Error writing report file: %v", err)
 		} else {
-			fmt.Printf("Report written to %s\n", reportFile)
+			logging.Print("Report written to %s", reportFile)
 		}
 	}
 
 	// Print results
 	if !valid {
-		fmt.Println("\nTag validation issues found:")
+		logging.Print("\nTag validation issues found:")
 		for _, violation := range violations {
-			fmt.Printf("Resource %s '%s' is missing required tags: %s\n",
+			logging.Print("Resource %s '%s' is missing required tags: %s",
 				violation.ResourceType, violation.ResourceName, strings.Join(violation.MissingTags, ", "))
 
 			// Show auto-remediation suggestions if requested
 			if autoRemediate {
-				fmt.Println("\nSuggested remediation:")
+				logging.Print("\nSuggested remediation:")
 
 				// Get existing tags for this resource
 				existingTags := make(map[string]string)
@@ -192,32 +202,32 @@ func main() {
 					violation.ResourcePath,
 					violation.MissingTags,
 					existingTags)
-				fmt.Println(remediation)
+				logging.Print("%s", remediation)
 
 				// Suggest provider default_tags update if appropriate
 				if strings.HasPrefix(violation.ResourceType, "aws_") {
-					fmt.Println("\nAlternatively, consider using provider default_tags:")
-					fmt.Println(validator.SuggestProviderDefaultTagsUpdate(violation.MissingTags))
+					logging.Print("\nAlternatively, consider using provider default_tags:")
+					logging.Print("%s", validator.SuggestProviderDefaultTagsUpdate(violation.MissingTags))
 				}
 			}
 		}
 
 		// Print summary statistics
-		fmt.Printf("\nSummary: %d/%d resources compliant (%.1f%%)\n",
+		logging.Print("\nSummary: %d/%d resources compliant (%.1f%%)",
 			stats.CompliantResources,
 			stats.TotalResources,
 			float64(stats.CompliantResources)/float64(stats.TotalResources)*100)
 
 		totalExemptResources := stats.FullyExemptResources + stats.PartiallyExemptResources
 		if totalExemptResources > 0 {
-			fmt.Printf("%d resources exempt from validation (%d fully exempt, %d partially exempt)\n",
+			logging.Print("%d resources exempt from validation (%d fully exempt, %d partially exempt)",
 				totalExemptResources, stats.FullyExemptResources, stats.PartiallyExemptResources)
 		}
 
-		fmt.Println("\nTag validation failed. Please fix the issues above.")
+		logging.Print("\nTag validation failed. Please fix the issues above.")
 		os.Exit(1)
 	} else {
-		fmt.Println("All resources have the required tags!")
+		logging.Print("All resources have the required tags!")
 	}
 }
 

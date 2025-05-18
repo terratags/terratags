@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/terratags/terratags/pkg/config"
+	"github.com/terratags/terratags/pkg/logging"
 	"github.com/terratags/terratags/pkg/parser"
 )
 
@@ -96,7 +97,7 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 				} else {
 					// Tag exists in default_tags, so it's valid
 					if len(defaultTags) > 0 {
-						fmt.Printf("Resource %s '%s' inherits tag '%s' from provider default_tags\n",
+						logging.Debug("Resource %s '%s' inherits tag '%s' from provider default_tags",
 							resource.Type, resource.Name, requiredTag)
 					}
 				}
@@ -144,7 +145,7 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 }
 
 // ValidateDirectory validates all Terraform files in a directory
-func ValidateDirectory(dir string, cfg *config.Config, verbose bool) (bool, []TagViolation, TagComplianceStats, []parser.Resource) {
+func ValidateDirectory(dir string, cfg *config.Config, logLevel string) (bool, []TagViolation, TagComplianceStats, []parser.Resource) {
 	// Find all Terraform files in the directory
 	files, err := filepath.Glob(filepath.Join(dir, "*.tf"))
 	if err != nil {
@@ -156,44 +157,34 @@ func ValidateDirectory(dir string, cfg *config.Config, verbose bool) (bool, []Ta
 		}}, TagComplianceStats{}, nil
 	}
 
-	if verbose {
-		fmt.Printf("Found %d Terraform files to analyze\n", len(files))
-	}
+	logging.Info("Found %d Terraform files to analyze", len(files))
 
 	var allResources []parser.Resource
 	var allProviders []parser.ProviderConfig
 
 	// Parse each file
 	for _, file := range files {
-		if verbose {
-			fmt.Printf("Analyzing file: %s\n", file)
-		}
+		logging.Info("Analyzing file: %s", file)
 
 		// Parse resources
-		resources, err := parser.ParseFile(file)
+		resources, err := parser.ParseFile(file, logLevel)
 		if err != nil {
-			if verbose {
-				fmt.Printf("Error parsing file %s: %s\n", file, err)
-			}
+			logging.Warn("Error parsing file %s: %s", file, err)
 			continue
 		}
 		allResources = append(allResources, resources...)
 
 		// Parse provider blocks
-		providers, err := parser.ParseProviderBlocks(file)
+		providers, err := parser.ParseProviderBlocks(file, logLevel)
 		if err != nil {
-			if verbose {
-				fmt.Printf("Error parsing provider blocks in %s: %s\n", file, err)
-			}
+			logging.Warn("Error parsing provider blocks in %s: %s", file, err)
 			continue
 		}
 		allProviders = append(allProviders, providers...)
 	}
 
-	if verbose {
-		fmt.Printf("Found %d taggable resources\n", len(allResources))
-		fmt.Printf("Found %d provider configurations with default tags\n", len(allProviders))
-	}
+	logging.Info("Found %d taggable resources", len(allResources))
+	logging.Info("Found %d provider configurations with default tags", len(allProviders))
 
 	// Validate resources
 	valid, violations, stats, _ := ValidateResources(allResources, allProviders, cfg)
@@ -201,13 +192,11 @@ func ValidateDirectory(dir string, cfg *config.Config, verbose bool) (bool, []Ta
 }
 
 // ValidateTerraformPlan validates a Terraform plan file
-func ValidateTerraformPlan(planPath string, cfg *config.Config, verbose bool) (bool, []TagViolation, TagComplianceStats, []parser.Resource) {
-	if verbose {
-		fmt.Printf("Analyzing Terraform plan: %s\n", planPath)
-	}
+func ValidateTerraformPlan(planPath string, cfg *config.Config, logLevel string) (bool, []TagViolation, TagComplianceStats, []parser.Resource) {
+	logging.Info("Analyzing Terraform plan: %s", planPath)
 
 	// Parse the plan
-	resources, err := parser.ParseTerraformPlan(planPath)
+	resources, err := parser.ParseTerraformPlan(planPath, logLevel)
 	if err != nil {
 		return false, []TagViolation{{
 			ResourceType: "error",
@@ -217,9 +206,7 @@ func ValidateTerraformPlan(planPath string, cfg *config.Config, verbose bool) (b
 		}}, TagComplianceStats{}, nil
 	}
 
-	if verbose {
-		fmt.Printf("Found %d taggable resources in plan\n", len(resources))
-	}
+	logging.Info("Found %d taggable resources in plan", len(resources))
 
 	// Validate resources (no provider default tags in plan output)
 	valid, violations, stats, _ := ValidateResources(resources, []parser.ProviderConfig{}, cfg)

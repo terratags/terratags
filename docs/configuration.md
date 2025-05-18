@@ -34,10 +34,12 @@ Terratags supports the following command-line options:
 - `-config`, `-c`: Path to the config file (JSON/YAML) containing required tag keys (required)
 - `-dir`, `-d`: Path to the Terraform directory to analyze (default: current directory)
 - `-verbose`, `-v`: Enable verbose output
+- `-log-level`, `-l`: Set logging level: DEBUG, INFO, WARN, ERROR (default: ERROR)
 - `-plan`, `-p`: Path to Terraform plan JSON file to analyze
 - `-report`, `-r`: Path to output HTML report file
-- `-remediate`, `-m`: Show auto-remediation suggestions for non-compliant resources
+- `-remediate`, `-re`: Show auto-remediation suggestions for non-compliant resources
 - `-exemptions`, `-e`: Path to exemptions file (JSON/YAML)
+- `-help`, `-h`: Show help message
 - `-version`, `-V`: Show version information
 
 ## Configuration Best Practices
