@@ -65,6 +65,7 @@ nav:
     - Required Tags: configuration.md
     - Exemptions: exemptions.md
     - Default Tags: default-tags.md
+    - Logging: logging.md
   - Usage: usage.md
   - CI/CD Integration: ci-cd.md
   - Examples: examples.md

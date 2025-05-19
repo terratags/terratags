@@ -291,22 +291,4 @@ Terratags now provides enhanced HTML reports with detailed information about tag
 
 The HTML report provides a visual representation of tag compliance across your Terraform resources, making it easy to identify which resources need attention and track compliance metrics. You can view the generated HTML report in any web browser.
 
-```
-┌─────────────────────────────────────────────────────┐
-│           Terraform Tag Compliance Report           │
-├─────────────────────────────────────────────────────┤
-│ Generated on: 2025-05-16                           │
-│                                                     │
-│ Summary:                                            │
-│ ✓ Total Resources: 4                                │
-│ ✓ Compliant Resources: 2                            │
-│ ✗ Non-compliant Resources: 1                        │
-│ ⚠ Exempt Resources: 1                               │
-│                                                     │
-│ [████████████████████████████████--------] 50.0%     │
-│                                                     │
-│ Non-compliant Resources:                            │
-│ ✗ aws_s3_bucket "data_bucket"                       │
-│   Missing Tags: Environment, Owner, Project         │
-└─────────────────────────────────────────────────────┘
-```
+![Sample Terratags Report](docs/assets/sample_report.png)
