@@ -4,7 +4,7 @@ Terratags integrates with AWS provider's `default_tags` feature. When you define
 
 ## How Default Tags Work
 
-1. Tags defined in the AWS provider's `default_tags` block are automatically applied to all resources created by that provider
+1. Tags defined in the AWS provider's `default_tags` block are automatically applied to all taggable resources created by that provider
 2. Terratags tracks tag inheritance from provider default_tags to individual resources
 3. Resources only need to specify tags not covered by default_tags
 4. Default tags can be overridden at the resource level if needed

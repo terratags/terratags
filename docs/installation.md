@@ -2,7 +2,7 @@
 
 Terratags can be installed in multiple ways. You don't need to have Go installed to use Terratags.
 
-## Binary Installation (Recommended)
+## Binary Installation
 
 The easiest way to install Terratags is to download a pre-built binary from the [GitHub Releases](https://github.com/terratags/terratags/releases) page:
 

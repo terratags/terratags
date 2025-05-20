@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -59,7 +58,7 @@ provider "awscc" {
   region = "us-west-2"
 }
 `
-	return ioutil.WriteFile(filepath.Join(tempDir, "main.tf"), []byte(config), 0644)
+	return os.WriteFile(filepath.Join(tempDir, "main.tf"), []byte(config), 0644)
 }
 
 // generateGoFile generates a Go file with the list of taggable resources
@@ -88,12 +87,12 @@ func generateGoFile(awsResources, awsccResources []string, outputFile string) er
 
 	content.WriteString("}")
 
-	return ioutil.WriteFile(outputFile, []byte(content.String()), 0644)
+	return os.WriteFile(outputFile, []byte(content.String()), 0644)
 }
 
 func main() {
 	// Create a temporary directory
-	tempDir, err := ioutil.TempDir("", "terraform-providers")
+	tempDir, err := os.MkdirTemp("", "terraform-providers")
 	if err != nil {
 		fmt.Printf("Error creating temporary directory: %v\n", err)
 		os.Exit(1)
@@ -130,7 +129,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = ioutil.WriteFile(schemaFile, schemaOutput, 0644)
+	err = os.WriteFile(schemaFile, schemaOutput, 0644)
 	if err != nil {
 		fmt.Printf("Error writing schema file: %v\n", err)
 		os.Exit(1)
@@ -138,7 +137,7 @@ func main() {
 
 	// Parse schemas
 	fmt.Println("Parsing schemas to find taggable resources...")
-	schemaData, err := ioutil.ReadFile(schemaFile)
+	schemaData, err := os.ReadFile(schemaFile)
 	if err != nil {
 		fmt.Printf("Error reading schema file: %v\n", err)
 		os.Exit(1)
@@ -206,6 +205,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Successfully updated taggable resources list with %d AWS resources and %d AWSCC resources\n", 
+	fmt.Printf("Successfully updated taggable resources list with %d AWS resources and %d AWSCC resources\n",
 		len(awsResources), len(awsccResources))
 }

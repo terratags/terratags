@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/terratags/terratags/pkg/config"
@@ -19,7 +20,7 @@ var version = "dev"
 
 // Custom usage function to display both long and short forms of flags
 func printUsage() {
-	version, err := getVersion()
+	version, _, err := getVersion()
 	if err != nil {
 		version = "unknown"
 	}
@@ -102,12 +103,12 @@ func main() {
 
 	// Show version if requested
 	if showVersion {
-		version, err := getVersion()
+		version, platform, err := getVersion()
 		if err != nil {
 			logging.Error("Error reading version: %v", err)
 			os.Exit(1)
 		}
-		logging.Print("Terratags v%s", version)
+		fmt.Printf("Terratags v%s (%s)\n", version, platform)
 		os.Exit(0)
 	}
 
@@ -231,12 +232,13 @@ func main() {
 	}
 }
 
-// getVersion returns the version of the application
+// getVersion returns the version and platform information of the application
 // The version is set at build time using ldflags
 // Example: go build -ldflags "-X main.version=0.1.0" -o terratags main.go
-func getVersion() (string, error) {
+func getVersion() (string, string, error) {
+	platform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
 	if version != "" {
-		return version, nil
+		return version, platform, nil
 	}
-	return "dev", nil
+	return "dev", platform, nil
 }

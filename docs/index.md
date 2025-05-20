@@ -18,13 +18,18 @@ Terratags helps enforce these tagging standards across your infrastructure, ensu
 
 - **Tag Validation**: Validates required tags on AWS resources
 - **Default Tags Support**: Supports AWS provider default_tags
-- **AWSCC Support**: Supports AWSCC provider tag format
+- **AWSCC Support**: Supports AWSCC provider tag format ( Refer [exclusion list](https://github.com/terratags/terratags/issues/9) for resources with non compliant tag schema which needs to be filtered yet)
 - **Module-Level Tags**: Supports module-level tags
 - **Exemption Support**: Supports exemptions for specific resources
 - **HTML Reports**: Generates HTML reports of tag compliance
 - **Auto-Remediation**: Provides auto-remediation suggestions
 - **Plan Integration**: Integrates with Terraform plan output
 - **Tag Inheritance**: Tracks tag inheritance from provider default_tags
+
+
+## Not validated
+
+- The behavior with provider aliases is not tested and so the evaluation cannot be guaranteed.
 
 ## Quick Start
 
@@ -35,7 +40,6 @@ Terratags helps enforce these tagging standards across your infrastructure, ensu
 brew install terratags/tap/terratags
 
 # Using Go
-go install github.com/terratags/terratags@latest
 go install github.com/terratags/terratags@latest
 ```
 

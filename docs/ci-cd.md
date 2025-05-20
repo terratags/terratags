@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.24'
           
@@ -162,7 +162,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.24'
           
@@ -173,7 +173,7 @@ jobs:
         run: terratags -config config.yaml -dir ./infra -report tag-report.html
         
       - name: Upload Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: tag-validation-report

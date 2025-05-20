@@ -9,18 +9,22 @@
 
 - Validates required tags on AWS resources
 - Supports AWS provider default_tags
-- Supports AWSCC provider tag format
+- Supports AWSCC provider tag format ( Refer [exclusion list](https://github.com/terratags/terratags/issues/9) for resources with non compliant tag schema which needs to be filtered yet)
 - Supports module-level tags
 - Supports exemptions for specific resources
 - Generates HTML reports of tag compliance
 - Provides auto-remediation suggestions
 - Integrates with Terraform plan output
 - Tracks tag inheritance from provider default_tags
-- Detailed exemption tracking and reporting
+- Exemption tracking and reporting
 
 Open issues for other providers:
 - [Google provider](https://github.com/terratags/terratags/issues/8)
 - [Azure providers](https://github.com/terratags/terratags/issues/7)
+
+## Not validated
+
+- The behavior with provider aliases is not tested and so the evaluation cannot be guaranteed.
 
 ## Installation
 
