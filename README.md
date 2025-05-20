@@ -18,6 +18,10 @@
 - Tracks tag inheritance from provider default_tags
 - Detailed exemption tracking and reporting
 
+Open issues for other providers:
+- [Google provider](https://github.com/terratags/terratags/issues/8)
+- [Azure providers](https://github.com/terratags/terratags/issues/7)
+
 ## Installation
 
 ### Using Homebrew
