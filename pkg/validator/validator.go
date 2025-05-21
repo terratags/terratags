@@ -206,7 +206,7 @@ func ValidateDirectory(dir string, cfg *config.Config, logLevel string) (bool, [
 		allResources = append(allResources, resources...)
 
 		// Parse provider blocks
-		providers, err := parser.ParseProviderBlocks(file, logLevel)
+		providers, err := parser.ParseProviderBlocks(file)
 		if err != nil {
 			logging.Warn("Error parsing provider blocks in %s: %s", file, err)
 			continue

@@ -17,7 +17,7 @@ type ProviderConfig struct {
 }
 
 // ParseProviderBlocks parses a Terraform file and extracts provider configurations
-func ParseProviderBlocks(path string, logLevel string) ([]ProviderConfig, error) {
+func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
@@ -41,7 +41,7 @@ func ParseProviderBlocks(path string, logLevel string) ([]ProviderConfig, error)
 			// We're only interested in AWS providers that might have default_tags
 			// Note: AWSCC provider doesn't support default_tags
 			if strings.HasPrefix(providerName, "aws") && !strings.HasPrefix(providerName, "awscc") {
-				defaultTags := extractDefaultTagsFromProviderBody(providerBody, logLevel)
+				defaultTags := extractDefaultTagsFromProviderBody(providerBody)
 				if len(defaultTags) > 0 {
 					logging.Debug("Found provider %s with default_tags", providerName)
 					for tag, value := range defaultTags {
@@ -61,7 +61,7 @@ func ParseProviderBlocks(path string, logLevel string) ([]ProviderConfig, error)
 }
 
 // extractDefaultTagsFromProviderBody extracts default_tags from a provider block body
-func extractDefaultTagsFromProviderBody(providerBody string, logLevel string) map[string]string {
+func extractDefaultTagsFromProviderBody(providerBody string) map[string]string {
 	defaultTags := make(map[string]string)
 
 	// Find the default_tags block within the provider - improved pattern

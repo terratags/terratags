@@ -94,7 +94,7 @@ func ParseFile(path string, logLevel string) ([]Resource, error) {
 
 			// Check if this resource type supports tagging
 			if isTaggableResource(resourceType) {
-				tags := extractTagsFromContent(content, resourceType, resourceName, logLevel)
+				tags := extractTagsFromContent(content, resourceType, resourceName)
 				resources = append(resources, Resource{
 					Type:       resourceType,
 					Name:       resourceName,
@@ -106,7 +106,7 @@ func ParseFile(path string, logLevel string) ([]Resource, error) {
 		case "module":
 			moduleName := block.Labels[0]
 			// Extract module resources and their tags
-			moduleTags := extractModuleTagsFromContent(content, moduleName, logLevel)
+			moduleTags := extractModuleTagsFromContent(content, moduleName)
 			if len(moduleTags) > 0 {
 				resources = append(resources, Resource{
 					Type:       "module",
@@ -137,7 +137,7 @@ func isTaggableResource(resourceType string) bool {
 }
 
 // extractTagsFromContent extracts tags directly from the file content
-func extractTagsFromContent(content []byte, resourceType, resourceName, logLevel string) map[string]string {
+func extractTagsFromContent(content []byte, resourceType, resourceName string) map[string]string {
 	tags := make(map[string]string)
 
 	// Convert content to string
@@ -214,7 +214,7 @@ func extractTagsFromContent(content []byte, resourceType, resourceName, logLevel
 }
 
 // extractModuleTagsFromContent extracts module tags directly from the file content
-func extractModuleTagsFromContent(content []byte, moduleName, logLevel string) map[string]string {
+func extractModuleTagsFromContent(content []byte, moduleName string) map[string]string {
 	tags := make(map[string]string)
 
 	// Convert content to string
@@ -271,7 +271,7 @@ func ParseTerraformPlan(planPath string, logLevel string) ([]Resource, error) {
 			Address string `json:"address"`
 			Type    string `json:"type"`
 			Change  struct {
-				After map[string]interface{} `json:"after"`
+				After map[string]any `json:"after"`
 			} `json:"change"`
 		} `json:"resource_changes"`
 	}
@@ -291,7 +291,7 @@ func ParseTerraformPlan(planPath string, logLevel string) ([]Resource, error) {
 			resourceName := nameParts[len(nameParts)-1]
 
 			// Extract tags from the "after" state
-			tags := extractTagsFromPlanResource(rc.Change.After, logLevel)
+			tags := extractTagsFromPlanResource(rc.Change.After)
 
 			resources = append(resources, Resource{
 				Type:       rc.Type,
@@ -307,17 +307,17 @@ func ParseTerraformPlan(planPath string, logLevel string) ([]Resource, error) {
 }
 
 // extractTagsFromPlanResource extracts tags from a resource in the plan
-func extractTagsFromPlanResource(resource map[string]interface{}, logLevel string) map[string]string {
+func extractTagsFromPlanResource(resource map[string]any) map[string]string {
 	tags := make(map[string]string)
 
 	// Check if the resource has tags
 	if tagsInterface, ok := resource["tags"]; ok {
 		// Check if this is an AWSCC resource (tags will be a list of maps with key/value pairs)
-		if tagsList, ok := tagsInterface.([]interface{}); ok {
+		if tagsList, ok := tagsInterface.([]any); ok {
 			// This is likely an AWSCC resource with tags as a list of maps
 			logging.Debug("Found AWSCC tags in plan resource")
 			for _, tagItem := range tagsList {
-				if tagMap, ok := tagItem.(map[string]interface{}); ok {
+				if tagMap, ok := tagItem.(map[string]any); ok {
 					// Extract key and value from the map
 					if keyInterface, keyOk := tagMap["key"]; keyOk {
 						if valueInterface, valueOk := tagMap["value"]; valueOk {
@@ -331,7 +331,7 @@ func extractTagsFromPlanResource(resource map[string]interface{}, logLevel strin
 					}
 				}
 			}
-		} else if tagsMap, ok := tagsInterface.(map[string]interface{}); ok {
+		} else if tagsMap, ok := tagsInterface.(map[string]any); ok {
 			// This is the standard AWS provider tags format (map of key/value)
 			logging.Debug("Found AWS tags in plan resource")
 			for k, v := range tagsMap {
