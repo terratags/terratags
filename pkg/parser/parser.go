@@ -127,6 +127,11 @@ func ParseFile(path string, logLevel string) ([]Resource, error) {
 
 // isTaggableResource checks if a resource type supports tagging
 func isTaggableResource(resourceType string) bool {
+	// First check if it's in the excluded list
+	if AwsccExcludedResources[resourceType] {
+		logging.Debug("%s is in the excluded awscc resources list", resourceType)
+		return true // Still return true so we process it, but we'll skip validation later
+	}
 	// Use the comprehensive list of AWS and AWSCC taggable resources
 	return awsTaggableResources[resourceType]
 }

@@ -157,3 +157,37 @@ resource "awscc_apigateway_rest_api" "example" {
 2. **Consistent Keys**: Use consistent tag keys across both AWS and AWSCC resources
 3. **Case Sensitivity**: Be aware that tag keys are case-sensitive
 4. **Validation**: Use Terratags to validate that all required tags are present on AWSCC resources
+
+## Excluded AWSCC Resources
+
+Some AWSCC resources have non-compliant tag schemas and are excluded from validation. These resources are shown in a separate "Excluded" category in the compliance report.
+
+The compliance percentage calculation doesn't include these excluded resources, ensuring that your compliance metrics accurately reflect only the resources that should be properly tagged.
+
+Excluded resources include:
+- `awscc_amplifyuibuilder_component`
+- `awscc_amplifyuibuilder_form`
+- `awscc_amplifyuibuilder_theme`
+- `awscc_apigatewayv2_api`
+- `awscc_apigatewayv2_domain_name`
+- `awscc_apigatewayv2_vpc_link`
+- `awscc_batch_compute_environment`
+- `awscc_batch_job_queue`
+- `awscc_batch_scheduling_policy`
+- `awscc_bedrock_agent`
+- `awscc_bedrock_agent_alias`
+- `awscc_bedrock_knowledge_base`
+- `awscc_eks_nodegroup`
+- `awscc_fis_experiment_template`
+- `awscc_greengrassv2_component_version`
+- And others with non-standard tag implementations
+
+These resources are identified in the HTML report in a dedicated "Excluded Resources" section.
+
+### Sample Report with Excluded Resources
+
+You can see an example of how excluded resources appear in the HTML report here: [AWSCC Sample Report](../assets/reports/awscc_report.html)
+
+![AWSCC Report Screenshot](../assets/reports/awscc_report_screenshot.png)
+
+This sample report shows how excluded resources are separated from the compliance calculation and displayed in their own section.

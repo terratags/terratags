@@ -17,6 +17,7 @@
 - Integrates with Terraform plan output
 - Tracks tag inheritance from provider default_tags
 - Exemption tracking and reporting
+- Excluded resources tracking for AWSCC resources with non-compliant tag schemas
 
 Open issues for other providers:
 - [Google provider](https://github.com/terratags/terratags/issues/8)
@@ -151,7 +152,7 @@ tags = [{
 }]
 ```
 
-**Note:** AWSCC provider does not support the `default_tags` feature.
+**Note:** AWSCC provider does not support the `default_tags` feature. Some AWSCC resources have non-compliant tag schemas and are excluded from validation.
 
 See [AWSCC Support](docs/awscc_support.md) for more details.
 

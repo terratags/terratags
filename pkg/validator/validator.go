@@ -29,6 +29,8 @@ type TagComplianceStats struct {
 	CompliantResources       int
 	FullyExemptResources     int
 	PartiallyExemptResources int
+	ExcludedAWSCCResources   []string
+	ExcludedResourcesCount   int
 	ViolationsByTag          map[string]int
 }
 
@@ -36,10 +38,14 @@ type TagComplianceStats struct {
 func ValidateResources(resources []parser.Resource, providers []parser.ProviderConfig, cfg *config.Config) (bool, []TagViolation, TagComplianceStats, []parser.Resource) {
 	var violations []TagViolation
 	stats := TagComplianceStats{
-		TotalResources:  len(resources),
 		ViolationsByTag: make(map[string]int),
 	}
 	valid := true
+
+	// Count resources that are not excluded
+	var nonExcludedResources int
+
+	// We'll track excluded resources later during resource processing
 
 	// Create a map of provider default tags by path
 	defaultTagsByPath := make(map[string]map[string]string)
@@ -48,6 +54,28 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 	}
 
 	for _, resource := range resources {
+		// Check if this is an excluded AWSCC resource
+		if parser.AwsccExcludedResources[resource.Type] {
+			// Add to excluded resources list if not already there
+			found := false
+			for _, excludedType := range stats.ExcludedAWSCCResources {
+				if excludedType == resource.Type {
+					found = true
+					break
+				}
+			}
+			if !found {
+				stats.ExcludedAWSCCResources = append(stats.ExcludedAWSCCResources, resource.Type)
+			}
+			// Increment the excluded resources count
+			stats.ExcludedResourcesCount++
+			// Skip validation for this resource
+			continue
+		}
+
+		// Count this as a non-excluded resource
+		nonExcludedResources++
+
 		// Get default tags for this resource's path
 		defaultTags := defaultTagsByPath[resource.Path]
 
@@ -140,6 +168,9 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 			stats.CompliantResources++
 		}
 	}
+
+	// Set the total resources to only count non-excluded resources
+	stats.TotalResources = nonExcludedResources
 
 	return valid, violations, stats, resources
 }
@@ -263,7 +294,7 @@ func SuggestProviderDefaultTagsUpdate(missingTags []string) string {
 
 // GenerateHTMLReport generates an enhanced HTML report of tag compliance using html/template with Bootstrap styling
 func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg *config.Config) string {
-	// Calculate compliance percentage
+	// Calculate compliance percentage - only considering non-excluded resources
 	compliancePercentage := 0.0
 	if stats.TotalResources > 0 {
 		compliancePercentage = float64(stats.CompliantResources) / float64(stats.TotalResources) * 100
@@ -346,7 +377,7 @@ func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card text-center mb-3 bg-success text-white">
                             <div class="card-body">
                                 <h3 class="h2">{{.Stats.CompliantResources}}</h3>
@@ -354,7 +385,7 @@ func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card text-center mb-3 bg-danger text-white">
                             <div class="card-body">
                                 <h3 class="h2">{{.NonCompliantCount}}</h3>
@@ -362,11 +393,19 @@ func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card text-center mb-3 bg-warning">
                             <div class="card-body">
                                 <h3 class="h2">{{.TotalExemptResources}}</h3>
                                 <p class="mb-0">Exempt</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center mb-3 bg-info text-white">
+                            <div class="card-body">
+                                <h3 class="h2">{{.Stats.ExcludedResourcesCount}}</h3>
+                                <p class="mb-0">Excluded</p>
                             </div>
                         </div>
                     </div>
@@ -500,6 +539,25 @@ func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg
             </div>
         </div>
         
+        <!-- AWSCC Resources Excluded from Evaluation -->
+        {{if .HasExcludedResources}}
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h2 class="card-title h5 mb-0">AWSCC Resources Excluded from Evaluation</h2>
+            </div>
+            <div class="card-body">
+                <p>The following AWSCC resources are excluded from tag validation due to tag schema mismatches:</p>
+                <div class="row">
+                    {{range .Stats.ExcludedAWSCCResources}}
+                    <div class="col-md-4 mb-2">
+                        <code>{{.}}</code>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+        {{end}}
+        
         <footer class="mt-4 text-center text-muted">
             <p>Generated by <a href="https://github.com/terratags/terratags" target="_blank">Terratags</a></p>
         </footer>
@@ -525,6 +583,7 @@ func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg
 		CompliancePercentage float64
 		RequiredTags         []string
 		Violations           []TagViolation
+		HasExcludedResources bool // Add this
 	}{
 		GeneratedTime:        time.Now().Format("2006-01-02 15:04:05"),
 		Stats:                stats,
@@ -533,6 +592,7 @@ func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg
 		CompliancePercentage: compliancePercentage,
 		RequiredTags:         cfg.Required,
 		Violations:           violations,
+		HasExcludedResources: len(stats.ExcludedAWSCCResources) > 0,
 	}
 
 	// Create a buffer to store the rendered template
