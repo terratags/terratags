@@ -1,4 +1,4 @@
-name: Update AWS Taggable Resources
+name: Update Taggable Resources
 
 on:
   schedule:
@@ -32,13 +32,16 @@ jobs:
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-      - name: Run update_resources.go script
+      - name: Run update_resources.go script for AWS
         run: go run scripts/update_resources.go
+
+      - name: Run update_google_resources.go script for Google Cloud
+        run: go run scripts/update_google_resources.go
 
       - name: Check for changes
         id: git-check
         run: |
-          if [[ -n $(git status -s pkg/parser/aws_taggable_resources.go) ]]; then
+          if [[ -n $(git status -s pkg/parser/aws_taggable_resources.go) || -n $(git status -s pkg/parser/google_taggable_resources.go) ]]; then
             echo "changes=true" >> $GITHUB_OUTPUT
           else
             echo "changes=false" >> $GITHUB_OUTPUT
@@ -49,13 +52,16 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ github.token }}
-          commit-message: "chore: update AWS taggable resources list [skip ci]"
-          title: 'chore: update AWS taggable resources list'
+          commit-message: "chore: update AWS and Google Cloud taggable resources list [skip ci]"
+          title: 'chore: update taggable resources list'
           body: |
-            This PR updates the AWS taggable resources list based on the latest AWS provider schema.
+            This PR updates the taggable resources list based on the latest provider schemas:
+            
+            - AWS provider resources
+            - Google Cloud provider resources
             
             This is an automated PR created by the weekly update-resources workflow.
-          branch: update-aws-resources
+          branch: update-taggable-resources
           base: main
           delete-branch: true
           labels: |

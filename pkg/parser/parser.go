@@ -132,6 +132,15 @@ func isTaggableResource(resourceType string) bool {
 		logging.Debug("%s is in the excluded awscc resources list", resourceType)
 		return true // Still return true so we process it, but we'll skip validation later
 	}
+	// Check if it's in the Google excluded list
+	if GoogleExcludedResources[resourceType] {
+		logging.Debug("%s is in the excluded google resources list", resourceType)
+		return true // Still return true so we process it, but we'll skip validation later
+	}
+	// Check if it's a Google resource
+	if strings.HasPrefix(resourceType, "google_") {
+		return googleTaggableResources[resourceType]
+	}
 	// Use the comprehensive list of AWS and AWSCC taggable resources
 	return awsTaggableResources[resourceType]
 }
@@ -151,10 +160,38 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 	resourceMatch := resourceRegex.FindString(fileContent)
 
 	if resourceMatch != "" {
+		// Check if this is a Google resource
+		isGoogle := strings.HasPrefix(resourceType, "google_")
 		// Check if this is an AWSCC resource
 		isAWSCC := strings.HasPrefix(resourceType, "awscc_")
 
-		if isAWSCC {
+		if isGoogle {
+			// For Google resources, labels are in the format: labels = {Key = "Value"}
+			labelsPattern := `labels\s*=\s*{([\s\S]*?)}`
+			labelsRegex := regexp.MustCompile(`(?s)` + labelsPattern)
+			labelsMatch := labelsRegex.FindStringSubmatch(resourceMatch)
+
+			if len(labelsMatch) > 1 {
+				logging.Debug("Found labels attribute in %s %s", resourceType, resourceName)
+
+				// Extract key-value pairs
+				labelContent := labelsMatch[1]
+				keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
+				keyValueRegex := regexp.MustCompile(keyValuePattern)
+				keyValueMatches := keyValueRegex.FindAllStringSubmatch(labelContent, -1)
+
+				for _, match := range keyValueMatches {
+					if len(match) > 2 {
+						key := match[1]
+						value := match[2]
+						logging.Debug("Found label key: %s", key)
+						tags[key] = value
+					}
+				}
+			} else {
+				logging.Debug("No labels attribute found in %s %s", resourceType, resourceName)
+			}
+		} else if isAWSCC {
 			// For AWSCC resources, tags are in the format: tags = [{key = "Key", value = "Value"}]
 			tagsPattern := `tags\s*=\s*\[([\s\S]*?)\]`
 			tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
@@ -310,8 +347,19 @@ func ParseTerraformPlan(planPath string, logLevel string) ([]Resource, error) {
 func extractTagsFromPlanResource(resource map[string]any) map[string]string {
 	tags := make(map[string]string)
 
-	// Check if the resource has tags
-	if tagsInterface, ok := resource["tags"]; ok {
+	// Check if the resource has tags or labels (for Google resources)
+	if labelsInterface, ok := resource["labels"]; ok {
+		// This is likely a Google resource with labels
+		logging.Debug("Found Google labels in plan resource")
+		if labelsMap, ok := labelsInterface.(map[string]any); ok {
+			for k, v := range labelsMap {
+				if strValue, ok := v.(string); ok {
+					logging.Debug("Found label key: %s", k)
+					tags[k] = strValue
+				}
+			}
+		}
+	} else if tagsInterface, ok := resource["tags"]; ok {
 		// Check if this is an AWSCC resource (tags will be a list of maps with key/value pairs)
 		if tagsList, ok := tagsInterface.([]any); ok {
 			// This is likely an AWSCC resource with tags as a list of maps

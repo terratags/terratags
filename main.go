@@ -205,10 +205,13 @@ func main() {
 					existingTags)
 				logging.Print("%s", remediation)
 
-				// Suggest provider default_tags update if appropriate
+				// Suggest provider default_tags/default_labels update if appropriate
 				if strings.HasPrefix(violation.ResourceType, "aws_") {
 					logging.Print("\nAlternatively, consider using provider default_tags:")
 					logging.Print("%s", validator.SuggestProviderDefaultTagsUpdate(violation.MissingTags))
+				} else if strings.HasPrefix(violation.ResourceType, "google_") {
+					logging.Print("\nAlternatively, consider using provider default_labels:")
+					logging.Print("%s", validator.SuggestProviderDefaultLabelsUpdate(violation.MissingTags))
 				}
 			}
 		}

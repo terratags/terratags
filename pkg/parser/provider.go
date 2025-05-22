@@ -1,3 +1,4 @@
+
 package parser
 
 import (
@@ -28,12 +29,14 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 
 	var providers []ProviderConfig
 
-	// Find all provider blocks - improved pattern to better match provider blocks with default_tags
-	providerPattern := `provider\s+"([^"]+)"\s*{([\s\S]*?default_tags[\s\S]*?{[\s\S]*?}[\s\S]*?)}`
-	providerRegex := regexp.MustCompile(`(?s)` + providerPattern)
-	providerMatches := providerRegex.FindAllStringSubmatch(fileContent, -1)
+	// Find all provider blocks with default_tags (AWS) or default_labels (Google)
+	// AWS provider pattern
+	awsProviderPattern := `provider\s+"([^"]+)"\s*{([\s\S]*?default_tags[\s\S]*?{[\s\S]*?}[\s\S]*?)}`
+	awsProviderRegex := regexp.MustCompile(`(?s)` + awsProviderPattern)
+	awsProviderMatches := awsProviderRegex.FindAllStringSubmatch(fileContent, -1)
 
-	for _, match := range providerMatches {
+	// Process AWS providers
+	for _, match := range awsProviderMatches {
 		if len(match) > 2 {
 			providerName := match[1]
 			providerBody := match[2]
@@ -57,33 +60,72 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 		}
 	}
 
+	// Google provider pattern
+	googleProviderPattern := `provider\s+"([^"]+)"\s*{([\s\S]*?default_labels[\s\S]*?{[\s\S]*?}[\s\S]*?)}`
+	googleProviderRegex := regexp.MustCompile(`(?s)` + googleProviderPattern)
+	googleProviderMatches := googleProviderRegex.FindAllStringSubmatch(fileContent, -1)
+
+	// Process Google providers
+	for _, match := range googleProviderMatches {
+		if len(match) > 2 {
+			providerName := match[1]
+			providerBody := match[2]
+
+			// We're only interested in Google providers that might have default_labels
+			if strings.HasPrefix(providerName, "google") {
+				defaultLabels := extractDefaultLabelsFromProviderBody(providerBody)
+				if len(defaultLabels) > 0 {
+					logging.Debug("Found provider %s with default_labels", providerName)
+					for label, value := range defaultLabels {
+						logging.Debug("Found default label key: %s with value: %s", label, value)
+					}
+					providers = append(providers, ProviderConfig{
+						Name:        providerName,
+						DefaultTags: defaultLabels, // We use the same field for both tags and labels
+						Path:        path,
+					})
+				}
+			}
+		}
+	}
+
 	return providers, nil
 }
 
-// extractDefaultTagsFromProviderBody extracts default_tags from a provider block body
-func extractDefaultTagsFromProviderBody(providerBody string) map[string]string {
-	defaultTags := make(map[string]string)
+// extractDefaultAttributesFromProviderBody extracts default_tags or default_labels from a provider block body
+func extractDefaultAttributesFromProviderBody(providerBody string, blockName string, attributeName string) map[string]string {
+	defaultAttributes := make(map[string]string)
 
-	// Find the default_tags block within the provider - improved pattern
-	defaultTagsPattern := `default_tags\s*{[\s\S]*?tags\s*=\s*{([\s\S]*?)}`
-	defaultTagsRegex := regexp.MustCompile(`(?s)` + defaultTagsPattern)
-	defaultTagsMatch := defaultTagsRegex.FindStringSubmatch(providerBody)
+	// Find the default_tags or default_labels block within the provider
+	pattern := fmt.Sprintf(`%s\s*{[\s\S]*?%s\s*=\s*{([\s\S]*?)}`, blockName, attributeName)
+	regex := regexp.MustCompile(`(?s)` + pattern)
+	match := regex.FindStringSubmatch(providerBody)
 
-	if len(defaultTagsMatch) > 1 {
-		// Extract key-value pairs from the tags block
-		tagContent := defaultTagsMatch[1]
+	if len(match) > 1 {
+		// Extract key-value pairs from the tags/labels block
+		content := match[1]
 		keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
 		keyValueRegex := regexp.MustCompile(keyValuePattern)
-		keyValueMatches := keyValueRegex.FindAllStringSubmatch(tagContent, -1)
+		keyValueMatches := keyValueRegex.FindAllStringSubmatch(content, -1)
 
 		for _, match := range keyValueMatches {
 			if len(match) > 2 {
 				key := match[1]
 				value := match[2]
-				defaultTags[key] = value
+				defaultAttributes[key] = value
 			}
 		}
 	}
 
-	return defaultTags
+	return defaultAttributes
+}
+
+// extractDefaultTagsFromProviderBody extracts default_tags from a provider block body
+func extractDefaultTagsFromProviderBody(providerBody string) map[string]string {
+	return extractDefaultAttributesFromProviderBody(providerBody, "default_tags", "tags")
+}
+
+// extractDefaultLabelsFromProviderBody extracts default_labels from a provider block body
+func extractDefaultLabelsFromProviderBody(providerBody string) map[string]string {
+	return extractDefaultAttributesFromProviderBody(providerBody, "default_labels", "labels")
 }
