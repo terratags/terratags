@@ -68,7 +68,10 @@ nav:
     - Logging: logging.md
   - Usage: usage.md
   - CI/CD Integration: ci-cd.md
-  - Examples: examples.md
+  - Examples:
+    - Example references: examples.md
+    - Sample Reports: sample-reports.md
+    - User Scenarios: user-scenarios.md
   - AWSCC Support: awscc_support.md
 
 extra:
