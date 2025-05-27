@@ -73,7 +73,8 @@ nav:
     - Sample Reports: sample-reports.md
     - User Scenarios: user-scenarios.md
   - AWSCC Support: awscc_support.md
-
+  - Supported Providers: providers.md
+  
 extra:
   social:
     - icon: fontawesome/brands/github
