@@ -9,7 +9,7 @@
 
 - Validates required tags on AWS resources
 - Supports AWS provider default_tags
-- Supports AWSCC provider tag format ( Refer [exclusion list](https://github.com/terratags/terratags/issues/9) for resources with non compliant tag schema which needs to be filtered yet)
+- Supports AWSCC provider tag format ( Refer [exclusion list]([https://github.com/terratags/terratags/issues/9](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15)) for resources with non compliant tag schema)
 - Supports module-level tags
 - Supports exemptions for specific resources
 - Generates HTML reports of tag compliance
