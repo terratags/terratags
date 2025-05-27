@@ -10,7 +10,7 @@ EXPECTED_EXIT_CODE=$2
 echo "Testing example: $EXAMPLE_DIR (Expected exit code: $EXPECTED_EXIT_CODE)"
 
 # Run terratags on the example directory
-./terratags -c ./examples/config.yaml -dir ./examples/$EXAMPLE_DIR
+./bin/terratags -c ./examples/config.yaml -dir ./examples/$EXAMPLE_DIR
 ACTUAL_EXIT_CODE=$?
 
 # Check if the exit code matches the expected exit code
