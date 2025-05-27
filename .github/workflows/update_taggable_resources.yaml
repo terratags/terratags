@@ -35,6 +35,9 @@ jobs:
       - name: Run update_resources.go script
         run: go run scripts/update_resources.go
 
+      - name: Format aws_taggable_resources.go
+        run: go fmt pkg/parser/aws_taggable_resources.go
+
       - name: Check for changes
         id: git-check
         run: |
