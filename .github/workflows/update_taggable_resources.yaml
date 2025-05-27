@@ -44,18 +44,23 @@ jobs:
             echo "changes=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Commit changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add pkg/parser/aws_taggable_resources.go
+          git commit -m "chore: update AWS taggable resources list $(date +%Y-%m-%d) [skip ci]"
+          git push origin HEAD:update-aws-resources --force
+          
       - name: Create Pull Request
         if: steps.git-check.outputs.changes == 'true'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          commit-message: "chore: update AWS taggable resources list [skip ci]"
-          title: 'chore: update AWS taggable resources list'
-          body: |
-            This PR updates the AWS taggable resources list based on the latest AWS provider schema.
-            This is an automated PR created by the weekly update-resources workflow.
-          branch: update-aws-resources
-          base: main
-          delete-branch: true
-          labels: |
-            automated
-            dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --title "chore: update AWS taggable resources list" \
+            --body "This PR updates the AWS taggable resources list based on the latest AWS provider schema.\nThis is an automated PR created by the weekly update-resources workflow." \
+            --base main \
+            --head update-aws-resources \
+            --label "automated,dependencies" || echo "PR already exists or could not be created"
