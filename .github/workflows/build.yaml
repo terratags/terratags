@@ -67,4 +67,4 @@ jobs:
       run: chmod +x ./.github/scripts/test_examples.sh
     
     - name: Test example
-      run: ./.github/scripts/test_examples.sh ${{ matrix.name }} ${{ matrix.expected_result }}
+      run: ./.github/scripts/test_examples.sh ${{ matrix.name }} ${{ matrix.expected_results }}
