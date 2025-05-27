@@ -21,20 +21,39 @@ jobs:
     - name: Install dependencies
       run: go mod download
 
-    - name: Build
-      run: go build -v ./...
-
-    - name: Test
-      run: go test -v ./...
-
     - name: Build binary
       run: |
         mkdir -p bin
         COMMIT_SHA=$(git rev-parse --short HEAD)
         go build -ldflags "-X main.version=dev-${COMMIT_SHA}" -o bin/terratags .
+        chmod +x bin/terratags
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: terratags
         path: bin/terratags
+  
+  test-examples:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromYaml(readFile('./.github/test_matrix.yaml')).examples }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download terratags binary
+      uses: actions/download-artifact@v4
+      with:
+        name: terratags
+        path: bin
+    
+    - name: Make binary executable
+      run: chmod +x bin/terratags
+    
+    - name: Make test script executable
+      run: chmod +x ./.github/test_examples.sh
+    
+    - name: Test example
+      run: ./.github/test_examples.sh ${{ matrix.name }} ${{ matrix.expected_result }}

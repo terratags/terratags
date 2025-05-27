@@ -1,0 +1,11 @@
+examples:
+  - name: provider_default_tags
+    expected_result: 0
+  - name: module_blocks
+    expected_result: 1
+  - name: resource_blocks
+    expected_result: 1
+  - name: awscc_tags
+    expected_result: 0
+  - name: mixed_blocks
+    expected_result: 0
