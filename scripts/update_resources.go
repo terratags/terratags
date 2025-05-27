@@ -10,6 +10,55 @@ import (
 	"strings"
 )
 
+// List of AWSCC resources that don't properly support tagging : Manually managed
+var excludedResources = []string{
+	"awscc_amplifyuibuilder_component",
+	"awscc_amplifyuibuilder_form",
+	"awscc_amplifyuibuilder_theme",
+	"awscc_apigatewayv2_api",
+	"awscc_apigatewayv2_domain_name",
+	"awscc_apigatewayv2_vpc_link",
+	"awscc_batch_compute_environment",
+	"awscc_batch_job_queue",
+	"awscc_batch_scheduling_policy",
+	"awscc_bedrock_agent",
+	"awscc_bedrock_agent_alias",
+	"awscc_bedrock_knowledge_base",
+	"awscc_eks_nodegroup",
+	"awscc_fis_experiment_template",
+	"awscc_greengrassv2_component_version",
+	"awscc_greengrassv2_deployment",
+	"awscc_healthimaging_datastore",
+	"awscc_iottwinmaker_component_type",
+	"awscc_iottwinmaker_entity",
+	"awscc_iottwinmaker_scene",
+	"awscc_iottwinmaker_sync_job",
+	"awscc_iottwinmaker_workspace",
+	"awscc_msk_cluster",
+	"awscc_msk_serverless_cluster",
+	"awscc_msk_vpc_connection",
+	"awscc_oam_link",
+	"awscc_oam_sink",
+	"awscc_pcaconnectorad_connector",
+	"awscc_pcaconnectorad_directory_registration",
+	"awscc_pcaconnectorad_template",
+}
+
+// getAwsccExcludedResources returns the list of excluded AWSCC resources
+func getAwsccExcludedResources() []string {
+	return excludedResources
+}
+
+// isExcludedResource checks if a resource is in the excluded list
+func isExcludedResource(resource string) bool {
+	for _, excluded := range excludedResources {
+		if resource == excluded {
+			return true
+		}
+	}
+	return false
+}
+
 // Schema represents the structure of the Terraform provider schema
 type Schema struct {
 	ProviderSchemas map[string]ProviderSchema `json:"provider_schemas"`
@@ -69,6 +118,16 @@ func generateGoFile(awsResources, awsccResources []string, outputFile string) er
 
 	var content strings.Builder
 	content.WriteString("package parser\n\n")
+
+	// First define the excluded resources
+	content.WriteString("// AWSCC resources that do not properly support tagging\n")
+	content.WriteString("// These resources are excluded from the taggable resources list\n")
+	content.WriteString("var AwsccExcludedResources = map[string]bool{\n")
+	for _, resource := range getAwsccExcludedResources() {
+		content.WriteString(fmt.Sprintf("\t\"%s\": true,\n", resource))
+	}
+	content.WriteString("}\n\n")
+
 	content.WriteString("// AWS and AWSCC taggable resources\n")
 	content.WriteString("// This list is automatically generated from the provider schemas\n")
 	content.WriteString("// and represents resources that support the 'tags' attribute\n")
@@ -82,7 +141,10 @@ func generateGoFile(awsResources, awsccResources []string, outputFile string) er
 
 	content.WriteString("\n\t// AWSCC Provider resources\n")
 	for _, resource := range awsccResources {
-		content.WriteString(fmt.Sprintf("\t\"%s\": true,\n", resource))
+		// Skip excluded resources
+		if !isExcludedResource(resource) {
+			content.WriteString(fmt.Sprintf("\t\"%s\": true,\n", resource))
+		}
 	}
 
 	content.WriteString("}")
