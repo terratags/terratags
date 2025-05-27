@@ -39,7 +39,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include: ${{ fromYaml(readFile('./.github/test_matrix.yaml')).examples }}
+        include:
+          - name: provider_default_tags
+            expected_results: 0
+          - name: module_blocks
+            expected_results: 1
+          - name: resource_blocks
+            expected_results: 1
+          - name: awscc_tags
+            expected_results: 0
+          - name: mixed_blocks
+            expected_results: 0
+
     steps:
     - uses: actions/checkout@v4
     
