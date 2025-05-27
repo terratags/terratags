@@ -151,20 +151,13 @@ resource "awscc_apigateway_rest_api" "example" {
 }
 ```
 
-## Best Practices for AWSCC Resources
-
-1. **Specify All Tags**: Since AWSCC doesn't support default_tags, make sure to specify all required tags directly on each resource
-2. **Consistent Keys**: Use consistent tag keys across both AWS and AWSCC resources
-3. **Case Sensitivity**: Be aware that tag keys are case-sensitive
-4. **Validation**: Use Terratags to validate that all required tags are present on AWSCC resources
-
 ## Excluded AWSCC Resources
 
 Some AWSCC resources have non-compliant tag schemas and are excluded from validation. These resources are shown in a separate "Excluded" category in the compliance report.
 
 The compliance percentage calculation doesn't include these excluded resources, ensuring that your compliance metrics accurately reflect only the resources that should be properly tagged.
 
-Excluded resources include:
+Excluded resources include: 
 - `awscc_amplifyuibuilder_component`
 - `awscc_amplifyuibuilder_form`
 - `awscc_amplifyuibuilder_theme`

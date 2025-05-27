@@ -45,12 +45,6 @@ go install github.com/terratags/terratags@latest
 
 Download the appropriate binary from the [GitHub Releases](https://github.com/terratags/terratags/releases) page.
 
-### Using Homebrew
-
-```bash
-brew install terratags/tap/terratags
-```
-
 See [installation docs](docs/installation.md) for more options.
 
 ## Usage

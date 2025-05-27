@@ -69,6 +69,7 @@ nav:
   - Usage: usage.md
   - CI/CD Integration: ci-cd.md
   - Examples: examples.md
+  - AWSCC Support: awscc_support.md
 
 extra:
   social:

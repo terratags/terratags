@@ -1,6 +1,6 @@
 # Terratags
 
-Terratags is a tool for validating tags on AWS resources in Terraform configurations.
+Terratags is a tool for validating tags on resources in Terraform configurations.
 
 ## Overview
 
