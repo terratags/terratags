@@ -64,7 +64,7 @@ jobs:
       run: chmod +x bin/terratags
     
     - name: Make test script executable
-      run: chmod +x ./.github/test_examples.sh
+      run: chmod +x ./.github/scripts/test_examples.sh
     
     - name: Test example
-      run: ./.github/test_examples.sh ${{ matrix.name }} ${{ matrix.expected_result }}
+      run: ./.github/scripts/test_examples.sh ${{ matrix.name }} ${{ matrix.expected_result }}
