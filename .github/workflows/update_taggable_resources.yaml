@@ -48,12 +48,10 @@ jobs:
         if: steps.git-check.outputs.changes == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ github.token }}
           commit-message: "chore: update AWS taggable resources list [skip ci]"
           title: 'chore: update AWS taggable resources list'
           body: |
             This PR updates the AWS taggable resources list based on the latest AWS provider schema.
-            
             This is an automated PR created by the weekly update-resources workflow.
           branch: update-aws-resources
           base: main
