@@ -107,7 +107,7 @@ resource "aws_s3_bucket" "example" {
   # AWS provider uses map format for tags
   tags = {
     Name        = "Example Bucket"
-    environment = "Test"
+    Environment = "Test"
     # Owner and Project come from default_tags
   }
 }
