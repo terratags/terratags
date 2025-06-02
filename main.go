@@ -24,7 +24,7 @@ func printUsage() {
 	if err != nil {
 		version = "unknown"
 	}
-	fmt.Fprintf(os.Stderr, "Terratags v%s - AWS Resource Tag Validator for Terraform\n\n", version)
+	fmt.Fprintf(os.Stderr, "Terratags v%s - Resource Tag Validator for Terraform\n\n", version)
 	fmt.Fprintf(os.Stderr, "Usage: terratags [OPTIONS]\n\n")
 	fmt.Fprintf(os.Stderr, "Options:\n")
 	fmt.Fprintf(os.Stderr, "  --config, -c <file>       Path to the config file (JSON/YAML) containing required tag keys\n")
@@ -35,6 +35,7 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "  --report, -r <file>       Path to output HTML report file\n")
 	fmt.Fprintf(os.Stderr, "  --remediate, -re          Show auto-remediation suggestions for non-compliant resources\n")
 	fmt.Fprintf(os.Stderr, "  --exemptions, -e <file>   Path to exemptions file (JSON/YAML)\n")
+	fmt.Fprintf(os.Stderr, "  --ignore-case, -i        Ignore case when comparing required tag keys\n")
 	fmt.Fprintf(os.Stderr, "  --help, -h                Show this help message\n")
 	fmt.Fprintf(os.Stderr, "  --version, -V             Show version information\n")
 }
@@ -50,6 +51,7 @@ func main() {
 		exemptionsFile string
 		showHelp       bool
 		showVersion    bool
+		ignoreTagCase  bool
 	)
 
 	// Define flags with both long and short forms
@@ -84,6 +86,9 @@ func main() {
 
 	flag.BoolVar(&showVersion, "version", false, "Show version information")
 	flag.BoolVar(&showVersion, "V", false, "Show version information")
+
+	flag.BoolVar(&ignoreTagCase, "ignore-case", false, "Ignore case when comparing required tag keys")
+	flag.BoolVar(&ignoreTagCase, "i", false, "Ignore case when comparing required tag keys")
 
 	// Override default usage function
 	flag.Usage = printUsage
@@ -129,6 +134,12 @@ func main() {
 	if err != nil {
 		logging.Error("Error loading config: %v", err)
 		os.Exit(1)
+	}
+
+	// Set the ignore case option
+	cfg.IgnoreTagCase = ignoreTagCase
+	if ignoreTagCase {
+		logging.Info("Case-insensitive tag key matching enabled")
 	}
 
 	// Load exemptions if provided

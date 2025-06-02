@@ -122,3 +122,13 @@ Available log levels:
 - `ERROR`: Shows only errors (default)
 
 For backward compatibility, the `-verbose` flag is equivalent to `-log-level INFO`.
+
+## Case-Insensitive Tag Matching
+
+By default, Terratags performs case-sensitive matching for tag keys. To enable case-insensitive matching, use the `-ignore-case` flag:
+
+```bash
+terratags -config config.yaml -dir ./infra -ignore-case
+```
+
+With this option enabled, tag keys like "Environment", "ENVIRONMENT", and "environment" will all match a required tag key "Environment".

@@ -12,9 +12,10 @@ import (
 
 // Config represents the configuration for tag validation
 type Config struct {
-	Required   []string            `json:"required_tags" yaml:"required_tags"`
-	Exemptions []ResourceExemption `json:"exemptions" yaml:"exemptions"`
-	ReportPath string              `json:"report_path" yaml:"report_path"`
+	Required      []string            `json:"required_tags" yaml:"required_tags"`
+	Exemptions    []ResourceExemption `json:"exemptions" yaml:"exemptions"`
+	ReportPath    string              `json:"report_path" yaml:"report_path"`
+	IgnoreTagCase bool                `json:"-" yaml:"-"` // Runtime option, not from config file
 }
 
 // ResourceExemption represents a resource that is exempt from tag requirements
@@ -86,9 +87,16 @@ func (c *Config) IsExemptFromTag(resourceType, resourceName, tagName string) (bo
 			(exemption.ResourceName == resourceName || exemption.ResourceName == "*") {
 
 			for _, exemptTag := range exemption.ExemptTags {
-				if exemptTag == tagName || exemptTag == "*" {
-
-					return true, exemption.Reason
+				if c.IgnoreTagCase {
+					// Case-insensitive comparison
+					if strings.EqualFold(exemptTag, tagName) || exemptTag == "*" {
+						return true, exemption.Reason
+					}
+				} else {
+					// Case-sensitive comparison (original behavior)
+					if exemptTag == tagName || exemptTag == "*" {
+						return true, exemption.Reason
+					}
 				}
 			}
 		}
