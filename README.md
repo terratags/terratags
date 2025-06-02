@@ -63,6 +63,7 @@ terratags -config config.yaml -dir ./infra
 - `-report`, `-r`: Path to output HTML report file
 - `-remediate`, `-re`: Show auto-remediation suggestions for non-compliant resources
 - `-exemptions`, `-e`: Path to exemptions file (JSON/YAML)
+- `-ignore-case`, `-i`: Ignore case when comparing required tag keys
 - `-help`, `-h`: Show help message
 - `-version`, `-V`: Show version information
 

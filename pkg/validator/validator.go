@@ -105,9 +105,39 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 
 		for _, requiredTag := range cfg.Required {
 			// Check if the tag is in the resource's tags
-			if _, exists := resource.Tags[requiredTag]; !exists {
+			tagExists := false
+			if cfg.IgnoreTagCase {
+				// Case-insensitive comparison
+				requiredTagLower := strings.ToLower(requiredTag)
+				for tagKey := range resource.Tags {
+					if strings.ToLower(tagKey) == requiredTagLower {
+						tagExists = true
+						break
+					}
+				}
+			} else {
+				// Case-sensitive comparison (original behavior)
+				_, tagExists = resource.Tags[requiredTag]
+			}
+
+			if !tagExists {
 				// If not in resource tags, check if it's in default tags
-				if _, existsInDefault := defaultTags[requiredTag]; !existsInDefault {
+				defaultTagExists := false
+				if cfg.IgnoreTagCase {
+					// Case-insensitive comparison for default tags
+					requiredTagLower := strings.ToLower(requiredTag)
+					for tagKey := range defaultTags {
+						if strings.ToLower(tagKey) == requiredTagLower {
+							defaultTagExists = true
+							break
+						}
+					}
+				} else {
+					// Case-sensitive comparison (original behavior)
+					_, defaultTagExists = defaultTags[requiredTag]
+				}
+
+				if !defaultTagExists {
 					// Check if this resource is exempt from this tag requirement
 					exempt, reason := cfg.IsExemptFromTag(resource.Type, resource.Name, requiredTag)
 					if exempt {

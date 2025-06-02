@@ -26,18 +26,6 @@ provider "awscc" {
   # Note: AWSCC provider doesn't support default_tags
 }
 
-# AWS resource with tags in map format
-resource "aws_s3_bucket" "example" {
-  bucket = "example-bucket"
-
-  # AWS provider uses map format for tags
-  tags = {
-    Name        = "Example Bucket"
-    Environment = "Test"
-    # Owner and Project come from default_tags
-  }
-}
-
 # AWSCC resource with tags in list-of-maps format
 resource "awscc_apigateway_rest_api" "example" {
   name = "example-api"
@@ -119,7 +107,7 @@ resource "aws_s3_bucket" "example" {
   # AWS provider uses map format for tags
   tags = {
     Name        = "Example Bucket"
-    Environment = "Test"
+    environment = "Test"
     # Owner and Project come from default_tags
   }
 }
