@@ -23,6 +23,7 @@
 
 Open issues for other providers:
 - [Google provider](https://github.com/terratags/terratags/issues/8)
+- [Azure providers](https://github.com/terratags/terratags/issues/7) : Keeping this open as there are additional Azure providers.
 
 ## Not validated
 
