@@ -236,7 +236,7 @@ func generateAzureGoFile(azurermResources []string, outputFile string) error {
 	}
 	content.WriteString("}\n\n")
 
-	content.WriteString("// Azure API resources that support tagging\n")
+	content.WriteString("// azapi resources that support tagging\n")
 	content.WriteString("var azapiTaggableResources = map[string]bool{\n")
 	content.WriteString("\t// All azapi resources support tagging\n")
 	content.WriteString("\t\"azapi_resource\": true,\n")

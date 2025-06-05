@@ -56,7 +56,7 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 		}
 	}
 
-	// Find Azure API-style provider blocks with default_tags as a direct attribute
+	// Find azapi-style provider blocks with default_tags as a direct attribute
 	azapiProviderPattern := `provider\s+"azapi"\s*{([\s\S]*?default_tags\s*=\s*{([\s\S]*?)}[\s\S]*?)}`
 	azapiProviderRegex := regexp.MustCompile(`(?s)` + azapiProviderPattern)
 	azapiProviderMatches := azapiProviderRegex.FindAllStringSubmatch(fileContent, -1)
@@ -81,7 +81,7 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 			}
 			
 			if len(defaultTags) > 0 {
-				logging.Debug("Found Azure API provider with default_tags")
+				logging.Debug("Found azapi provider with default_tags")
 				for tag, value := range defaultTags {
 					logging.Debug("Found default tag key: %s with value: %s", tag, value)
 				}

@@ -136,7 +136,7 @@ func isTaggableResource(resourceType string) bool {
 	if strings.HasPrefix(resourceType, "azurerm_") {
 		return azureTaggableResources[resourceType]
 	}
-	// Check if it's an Azure API resource
+	// Check if it's an azapi resource
 	if strings.HasPrefix(resourceType, "azapi_") {
 		return azapiTaggableResources[resourceType]
 	}
@@ -163,7 +163,7 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 		isAWSCC := strings.HasPrefix(resourceType, "awscc_")
 		// Check if this is an Azure resource
 		isAzurerm := strings.HasPrefix(resourceType, "azurerm_")
-		// Check if this is an Azure API resource
+		// Check if this is an azapi resource
 		isAzapi := strings.HasPrefix(resourceType, "azapi_")
 
 		if isAWSCC {

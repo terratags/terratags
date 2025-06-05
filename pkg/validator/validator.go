@@ -320,8 +320,8 @@ func SuggestProviderDefaultTagsUpdate(missingTags []string) string {
 	sb.WriteString("  }\n")
 	sb.WriteString("}\n\n")
 
-	// Add Azure API provider suggestion
-	sb.WriteString("# Azure API Provider\n")
+	// Add azapi provider suggestion
+	sb.WriteString("# azapi Provider\n")
 	sb.WriteString("provider \"azapi\" {\n")
 	sb.WriteString("  # Existing provider configuration preserved\n\n")
 	sb.WriteString("  default_tags = {\n")

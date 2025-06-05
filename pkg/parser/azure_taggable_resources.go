@@ -401,7 +401,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_workloads_sap_three_tier_virtual_instance": true,
 }
 
-// Azure API resources that support tagging
+// azapi resources that support tagging
 var azapiTaggableResources = map[string]bool{
 	// All azapi resources support tagging
 	"azapi_resource": true,

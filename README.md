@@ -220,7 +220,7 @@ See [AWSCC Support documentation](docs/awscc_support.md) for more details.
 
 ### Azure Providers Support
 
-Terratags supports both the Azurerm and Azure API (azapi) providers for Azure resources.
+Terratags supports both the Azurerm and azapi providers for Azure resources.
 
 #### Azurerm Provider
 
@@ -240,9 +240,9 @@ resource "azurerm_resource_group" "example" {
 
 **Note:** Azurerm provider does not support `default_tags`, so all required tags must be specified at the resource level.
 
-#### Azure API Provider (azapi)
+#### azapi Provider 
 
-The Azure API provider supports tags at both the provider level (via `default_tags`) and at the resource level:
+The azapi provider supports tags at both the provider level (via `default_tags`) and at the resource level:
 
 ```terraform
 provider "azapi" {

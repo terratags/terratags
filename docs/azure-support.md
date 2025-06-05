@@ -65,5 +65,5 @@ resource "azapi_resource" "example" {
 Terratags automatically detects which Azure resources support tagging by analyzing the provider schemas. The list of taggable resources is generated during the build process.
 
 For the most up-to-date list of supported resources, refer to the provider documentation:
-- [Azurerm Provider](https://registry.terraform.io/providers/hashicorp/azurerm/4.31.0)
+- [Azurerm Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
 - [Azapi Provider](https://registry.terraform.io/providers/Azure/azapi/latest/docs)
