@@ -16,16 +16,22 @@ Terratags helps enforce these tagging standards across your infrastructure, ensu
 
 ## Key Features
 
-- **Tag Validation**: Validates required tags on AWS resources
+- **Tag Validation**: Validates required tags on AWS and Azure resources
 - **Default Tags Support**: Supports AWS provider default_tags
-- **AWSCC Support**: Supports AWSCC provider tag format ( Refer [exclusion list](https://github.com/terratags/terratags/issues/9) for resources with non compliant tag schema which needs to be filtered yet)
+- **AWSCC Support**: Supports AWSCC provider tag format ( Refer [exclusion list](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15) for resources with non compliant tag schema)
+- **Azure Support**: Supports Azure providers (azurerm and azapi)
 - **Module-Level Tags**: Supports module-level tags
 - **Exemption Support**: Supports exemptions for specific resources
 - **HTML Reports**: Generates HTML reports of tag compliance
 - **Auto-Remediation**: Provides auto-remediation suggestions
 - **Plan Integration**: Integrates with Terraform plan output
 - **Tag Inheritance**: Tracks tag inheritance from provider default_tags
+- **Exemption Tracking**: Tracks and reports on exemptions
+- **Excluded Resources**: Tracks AWSCC resources with non-compliant tag schemas
 
+Open issues for other providers:
+- [Google provider](https://github.com/terratags/terratags/issues/8)
+- [Azure providers](https://github.com/terratags/terratags/issues/7) : Keeping this open as there are additional Azure providers.
 
 ## Not validated
 

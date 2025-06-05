@@ -86,14 +86,14 @@ func extractProviderVersions(tempDir string) ([]ProviderInfo, error) {
 	}
 
 	var providers []ProviderInfo
-	re := regexp.MustCompile(`provider "registry\.terraform\.io/hashicorp/([a-z]+)" {\s+version\s+=\s+"([0-9.]+)"`)
+	re := regexp.MustCompile(`provider "registry\.terraform\.io/([^/]+)/([a-z]+)" {\s+version\s+=\s+"([0-9.]+)"`)
 
 	matches := re.FindAllStringSubmatch(string(data), -1)
 	for _, match := range matches {
-		if len(match) == 3 {
+		if len(match) == 4 {
 			providers = append(providers, ProviderInfo{
-				Name:    match[1],
-				Version: match[2],
+				Name:    match[2],
+				Version: match[3],
 			})
 		}
 	}
@@ -134,7 +134,7 @@ func hasTagsAttribute(schema ResourceSchema) bool {
 	return hasTags || hasTagsAll
 }
 
-// createTerraformConfig creates a temporary Terraform configuration with AWS and AWSCC providers
+// createTerraformConfig creates a temporary Terraform configuration with AWS, AWSCC, Azurerm and azapi providers
 func createTerraformConfig(tempDir string) error {
 	config := `terraform {
   required_providers {
@@ -143,6 +143,12 @@ func createTerraformConfig(tempDir string) error {
     }
     awscc = {
       source = "hashicorp/awscc"
+    }
+    azurerm = {
+      source = "hashicorp/azurerm"
+    }
+    azapi = {
+      source = "Azure/azapi"
     }
   }
 }
@@ -154,12 +160,22 @@ provider "aws" {
 provider "awscc" {
   region = "us-west-2"
 }
+
+provider "azurerm" {
+  features {}
+}
+
+provider "azapi" {
+  default_tags = {
+    environment = "test"
+  }
+}
 `
 	return os.WriteFile(filepath.Join(tempDir, "main.tf"), []byte(config), 0644)
 }
 
 // generateGoFile generates a Go file with the list of taggable resources
-func generateGoFile(awsResources, awsccResources []string, outputFile string) error {
+func generateGoFile(awsResources, awsccResources, azurermResources []string, outputFile string) error {
 	// Sort resources alphabetically
 	sort.Strings(awsResources)
 	sort.Strings(awsccResources)
@@ -195,6 +211,36 @@ func generateGoFile(awsResources, awsccResources []string, outputFile string) er
 		}
 	}
 
+	content.WriteString("}")
+
+	return os.WriteFile(outputFile, []byte(content.String()), 0644)
+}
+
+// generateAzureGoFile generates a Go file with the list of Azure taggable resources
+func generateAzureGoFile(azurermResources []string, outputFile string) error {
+	// Sort resources alphabetically
+	sort.Strings(azurermResources)
+
+	var content strings.Builder
+	content.WriteString("package parser\n\n")
+
+	content.WriteString("// Azure taggable resources\n")
+	content.WriteString("// This list is automatically generated from the provider schemas\n")
+	content.WriteString("// and represents resources that support the 'tags' attribute\n")
+	content.WriteString("var azureTaggableResources = map[string]bool{\n")
+
+	// Azurerm resources
+	content.WriteString("\t// Azurerm Provider resources\n")
+	for _, resource := range azurermResources {
+		content.WriteString(fmt.Sprintf("\t\"%s\": true,\n", resource))
+	}
+	content.WriteString("}\n\n")
+
+	content.WriteString("// azapi resources that support tagging\n")
+	content.WriteString("var azapiTaggableResources = map[string]bool{\n")
+	content.WriteString("\t// All azapi resources support tagging\n")
+	content.WriteString("\t\"azapi_resource\": true,\n")
+	content.WriteString("\t\"azapi_update_resource\": true,\n")
 	content.WriteString("}")
 
 	return os.WriteFile(outputFile, []byte(content.String()), 0644)
@@ -270,6 +316,7 @@ func main() {
 
 	var awsResources []string
 	var awsccResources []string
+	var azurermResources []string
 
 	// Process AWS provider
 	awsSchema, ok := schema.ProviderSchemas["registry.terraform.io/hashicorp/aws"]
@@ -291,6 +338,16 @@ func main() {
 		}
 	}
 
+	// Process Azurerm provider
+	azurermSchema, ok := schema.ProviderSchemas["registry.terraform.io/hashicorp/azurerm"]
+	if ok {
+		for resourceName, resourceSchema := range azurermSchema.ResourceSchemas {
+			if hasTagsAttribute(resourceSchema) {
+				azurermResources = append(azurermResources, resourceName)
+			}
+		}
+	}
+
 	// Determine output file path
 	execPath, err := os.Executable()
 	if err != nil {
@@ -300,13 +357,15 @@ func main() {
 
 	scriptDir := filepath.Dir(execPath)
 	repoRoot := filepath.Dir(scriptDir)
-	outputFile := filepath.Join(repoRoot, "pkg", "parser", "aws_taggable_resources.go")
+	awsOutputFile := filepath.Join(repoRoot, "pkg", "parser", "aws_taggable_resources.go")
+	azureOutputFile := filepath.Join(repoRoot, "pkg", "parser", "azure_taggable_resources.go")
 	providersFile := filepath.Join(repoRoot, "docs", "providers.md")
 
 	// If running from the scripts directory directly
 	if filepath.Base(scriptDir) == "scripts" {
 		repoRoot = filepath.Dir(scriptDir)
-		outputFile = filepath.Join(repoRoot, "pkg", "parser", "aws_taggable_resources.go")
+		awsOutputFile = filepath.Join(repoRoot, "pkg", "parser", "aws_taggable_resources.go")
+		azureOutputFile = filepath.Join(repoRoot, "pkg", "parser", "azure_taggable_resources.go")
 		providersFile = filepath.Join(repoRoot, "docs", "providers.md")
 	} else {
 		// If running from the repo root with go run
@@ -315,14 +374,22 @@ func main() {
 			fmt.Printf("Error getting current directory: %v\n", err)
 			os.Exit(1)
 		}
-		outputFile = filepath.Join(currentDir, "pkg", "parser", "aws_taggable_resources.go")
+		awsOutputFile = filepath.Join(currentDir, "pkg", "parser", "aws_taggable_resources.go")
+		azureOutputFile = filepath.Join(currentDir, "pkg", "parser", "azure_taggable_resources.go")
 		providersFile = filepath.Join(currentDir, "docs", "providers.md")
 	}
 
-	// Generate Go file
-	err = generateGoFile(awsResources, awsccResources, outputFile)
+	// Generate AWS Go file
+	err = generateGoFile(awsResources, awsccResources, nil, awsOutputFile)
 	if err != nil {
-		fmt.Printf("Error generating Go file: %v\n", err)
+		fmt.Printf("Error generating AWS Go file: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Generate Azure Go file
+	err = generateAzureGoFile(azurermResources, azureOutputFile)
+	if err != nil {
+		fmt.Printf("Error generating Azure Go file: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -333,7 +400,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Successfully updated taggable resources list with %d AWS resources and %d AWSCC resources\n",
-		len(awsResources), len(awsccResources))
+	fmt.Printf("Successfully updated taggable resources list with %d AWS resources, %d AWSCC resources, and %d Azurerm resources\n",
+		len(awsResources), len(awsccResources), len(azurermResources))
 	fmt.Printf("Successfully generated providers information file at %s\n", providersFile)
 }

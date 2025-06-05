@@ -55,6 +55,16 @@ jobs:
             expected_results: 0
           - name: mixed_blocks
             expected_results: 0
+          - name: azurerm_tags
+            expected_results: 1
+          - name: azapi_tags
+            expected_results: 0
+          - name: azapi-failure
+            expected_results: 1
+          - name: azurerm-no-tags
+            expected_results: 0
+          - name: azurerm-passing
+            expected_results: 0
 
     steps:
     - uses: actions/checkout@v4

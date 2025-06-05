@@ -28,22 +28,21 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 
 	var providers []ProviderConfig
 
-	// Find all provider blocks - improved pattern to better match provider blocks with default_tags
-	providerPattern := `provider\s+"([^"]+)"\s*{([\s\S]*?default_tags[\s\S]*?{[\s\S]*?}[\s\S]*?)}`
-	providerRegex := regexp.MustCompile(`(?s)` + providerPattern)
-	providerMatches := providerRegex.FindAllStringSubmatch(fileContent, -1)
+	// Find AWS-style provider blocks with default_tags as a nested block
+	awsProviderPattern := `provider\s+"([^"]+)"\s*{([\s\S]*?default_tags[\s\S]*?{[\s\S]*?}[\s\S]*?)}`
+	awsProviderRegex := regexp.MustCompile(`(?s)` + awsProviderPattern)
+	awsProviderMatches := awsProviderRegex.FindAllStringSubmatch(fileContent, -1)
 
-	for _, match := range providerMatches {
+	for _, match := range awsProviderMatches {
 		if len(match) > 2 {
 			providerName := match[1]
 			providerBody := match[2]
 
 			// We're only interested in AWS providers that might have default_tags
-			// Note: AWSCC provider doesn't support default_tags
 			if strings.HasPrefix(providerName, "aws") && !strings.HasPrefix(providerName, "awscc") {
 				defaultTags := extractDefaultTagsFromProviderBody(providerBody)
 				if len(defaultTags) > 0 {
-					logging.Debug("Found provider %s with default_tags", providerName)
+					logging.Debug("Found AWS provider %s with default_tags", providerName)
 					for tag, value := range defaultTags {
 						logging.Debug("Found default tag key: %s with value: %s", tag, value)
 					}
@@ -53,6 +52,44 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 						Path:        path,
 					})
 				}
+			}
+		}
+	}
+
+	// Find azapi-style provider blocks with default_tags as a direct attribute
+	azapiProviderPattern := `provider\s+"azapi"\s*{([\s\S]*?default_tags\s*=\s*{([\s\S]*?)}[\s\S]*?)}`
+	azapiProviderRegex := regexp.MustCompile(`(?s)` + azapiProviderPattern)
+	azapiProviderMatches := azapiProviderRegex.FindAllStringSubmatch(fileContent, -1)
+
+	for _, match := range azapiProviderMatches {
+		if len(match) > 2 {
+			providerName := "azapi"
+			tagContent := match[2]
+			
+			// Extract key-value pairs from the tags block
+			defaultTags := make(map[string]string)
+			keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
+			keyValueRegex := regexp.MustCompile(keyValuePattern)
+			keyValueMatches := keyValueRegex.FindAllStringSubmatch(tagContent, -1)
+
+			for _, kvMatch := range keyValueMatches {
+				if len(kvMatch) > 2 {
+					key := kvMatch[1]
+					value := kvMatch[2]
+					defaultTags[key] = value
+				}
+			}
+			
+			if len(defaultTags) > 0 {
+				logging.Debug("Found azapi provider with default_tags")
+				for tag, value := range defaultTags {
+					logging.Debug("Found default tag key: %s with value: %s", tag, value)
+				}
+				providers = append(providers, ProviderConfig{
+					Name:        providerName,
+					DefaultTags: defaultTags,
+					Path:        path,
+				})
 			}
 		}
 	}
