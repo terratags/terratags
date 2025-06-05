@@ -3,13 +3,15 @@
   <span style="font-size:48px; font-weight:bold; vertical-align:middle">Terratags</span>
 </p>
 
-<p align="center">Terratags is a tool for validating tags on AWS resources in Terraform configurations.</p>
+<p align="center">Terratags is a tool for validating tags on AWS and Azure resources in Terraform configurations.</p>
 
 ## Features
 
-- Validates required tags on AWS resources
+- Validates required tags on AWS and Azure resources
 - Supports AWS provider default_tags
 - Supports AWSCC provider tag format ( Refer [exclusion list]([https://github.com/terratags/terratags/issues/9](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15)) for resources with non compliant tag schema)
+- Supports Azure providers (azurerm and azapi)
+- Supports azapi provider default_tags
 - Supports module-level tags
 - Supports exemptions for specific resources
 - Generates HTML reports of tag compliance
@@ -21,7 +23,6 @@
 
 Open issues for other providers:
 - [Google provider](https://github.com/terratags/terratags/issues/8)
-- [Azure providers](https://github.com/terratags/terratags/issues/7)
 
 ## Not validated
 
@@ -216,6 +217,54 @@ resource "awscc_apigateway_rest_api" "example" {
 **Note:** AWSCC provider does not support `default_tags`, so all required tags must be specified at the resource level.
 
 See [AWSCC Support documentation](docs/awscc_support.md) for more details.
+
+### Azure Providers Support
+
+Terratags supports both the Azurerm and Azure API (azapi) providers for Azure resources.
+
+#### Azurerm Provider
+
+The Azurerm provider uses a map of key/value pairs for tags, similar to the AWS provider:
+
+```terraform
+resource "azurerm_resource_group" "example" {
+  name     = "example-resources"
+  location = "West Europe"
+  
+  tags = {
+    Environment = "Production"
+    Project     = "Terratags"
+  }
+}
+```
+
+**Note:** Azurerm provider does not support `default_tags`, so all required tags must be specified at the resource level.
+
+#### Azure API Provider (azapi)
+
+The Azure API provider supports tags at both the provider level (via `default_tags`) and at the resource level:
+
+```terraform
+provider "azapi" {
+  default_tags = {
+    Environment = "Production"
+    Project     = "Terratags"
+  }
+}
+
+resource "azapi_resource" "example" {
+  type      = "Microsoft.Storage/storageAccounts@2022-05-01"
+  name      = "examplestorageaccount"
+  parent_id = azurerm_resource_group.example.id
+  location  = azurerm_resource_group.example.location
+  
+  tags = {
+    Name = "example-storage"
+  }
+}
+```
+
+See [Azure Support documentation](docs/azure-support.md) for more details.
 
 ## Examples
 

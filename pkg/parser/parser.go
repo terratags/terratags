@@ -132,6 +132,14 @@ func isTaggableResource(resourceType string) bool {
 		logging.Debug("%s is in the excluded awscc resources list", resourceType)
 		return true // Still return true so we process it, but we'll skip validation later
 	}
+	// Check if it's an Azure resource
+	if strings.HasPrefix(resourceType, "azurerm_") {
+		return azureTaggableResources[resourceType]
+	}
+	// Check if it's an Azure API resource
+	if strings.HasPrefix(resourceType, "azapi_") {
+		return azapiTaggableResources[resourceType]
+	}
 	// Use the comprehensive list of AWS and AWSCC taggable resources
 	return awsTaggableResources[resourceType]
 }
@@ -153,6 +161,10 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 	if resourceMatch != "" {
 		// Check if this is an AWSCC resource
 		isAWSCC := strings.HasPrefix(resourceType, "awscc_")
+		// Check if this is an Azure resource
+		isAzurerm := strings.HasPrefix(resourceType, "azurerm_")
+		// Check if this is an Azure API resource
+		isAzapi := strings.HasPrefix(resourceType, "azapi_")
 
 		if isAWSCC {
 			// For AWSCC resources, tags are in the format: tags = [{key = "Key", value = "Value"}]
@@ -180,6 +192,32 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 				}
 			} else {
 				logging.Debug("No tags attribute found in AWSCC resource %s %s", resourceType, resourceName)
+			}
+		} else if isAzurerm || isAzapi {
+			// For Azure resources, tags are in the format: tags = {Key = "Value"}
+			tagsPattern := `tags\s*=\s*{([\s\S]*?)}`
+			tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
+			tagsMatch := tagsRegex.FindStringSubmatch(resourceMatch)
+
+			if len(tagsMatch) > 1 {
+				logging.Debug("Found tags attribute in %s %s", resourceType, resourceName)
+
+				// Extract key-value pairs
+				tagContent := tagsMatch[1]
+				keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
+				keyValueRegex := regexp.MustCompile(keyValuePattern)
+				keyValueMatches := keyValueRegex.FindAllStringSubmatch(tagContent, -1)
+
+				for _, match := range keyValueMatches {
+					if len(match) > 2 {
+						key := match[1]
+						value := match[2]
+						logging.Debug("Found tag key: %s", key)
+						tags[key] = value
+					}
+				}
+			} else {
+				logging.Debug("No tags attribute found in %s %s", resourceType, resourceName)
 			}
 		} else {
 			// For AWS resources, tags are in the format: tags = {Key = "Value"}
@@ -332,8 +370,8 @@ func extractTagsFromPlanResource(resource map[string]any) map[string]string {
 				}
 			}
 		} else if tagsMap, ok := tagsInterface.(map[string]any); ok {
-			// This is the standard AWS provider tags format (map of key/value)
-			logging.Debug("Found AWS tags in plan resource")
+			// This is the standard AWS/Azure provider tags format (map of key/value)
+			logging.Debug("Found tags in plan resource")
 			for k, v := range tagsMap {
 				if strValue, ok := v.(string); ok {
 					logging.Debug("Found tag key: %s", k)

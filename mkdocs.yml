@@ -1,5 +1,5 @@
 site_name: Terratags
-site_description: A tool for validating tags on AWS resources in Terraform configurations
+site_description: A tool for validating tags on AWS and Azure resources in Terraform configurations
 site_url: https://terratags.github.io/terratags/
 repo_url: https://github.com/terratags/terratags
 repo_name: terratags/terratags
@@ -73,6 +73,7 @@ nav:
     - Sample Reports: sample-reports.md
     - User Scenarios: user-scenarios.md
   - AWSCC Support: awscc_support.md
+  - Azure Support: azure-support.md
   - Supported Providers: providers.md
   
 extra:

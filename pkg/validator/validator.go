@@ -305,6 +305,7 @@ func GenerateRemediationCode(resourceType, resourceName, resourcePath string, mi
 func SuggestProviderDefaultTagsUpdate(missingTags []string) string {
 	var sb strings.Builder
 
+	sb.WriteString("# AWS Provider\n")
 	sb.WriteString("provider \"aws\" {\n")
 	sb.WriteString("  # Existing provider configuration preserved\n\n")
 	sb.WriteString("  default_tags {\n")
@@ -316,6 +317,20 @@ func SuggestProviderDefaultTagsUpdate(missingTags []string) string {
 	}
 
 	sb.WriteString("    }\n")
+	sb.WriteString("  }\n")
+	sb.WriteString("}\n\n")
+
+	// Add Azure API provider suggestion
+	sb.WriteString("# Azure API Provider\n")
+	sb.WriteString("provider \"azapi\" {\n")
+	sb.WriteString("  # Existing provider configuration preserved\n\n")
+	sb.WriteString("  default_tags = {\n")
+
+	// Add missing tags with placeholder values
+	for _, tag := range missingTags {
+		sb.WriteString(fmt.Sprintf("    %s = \"CHANGE_ME\"  # Added missing required tag\n", tag))
+	}
+
 	sb.WriteString("  }\n")
 	sb.WriteString("}")
 
