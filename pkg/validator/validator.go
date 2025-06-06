@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -207,6 +208,16 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 
 // ValidateDirectory validates all Terraform files in a directory
 func ValidateDirectory(dir string, cfg *config.Config, logLevel string) (bool, []TagViolation, TagComplianceStats, []parser.Resource) {
+	// Check if directory exists
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return false, []TagViolation{{
+			ResourceType: "error",
+			ResourceName: "error",
+			ResourcePath: dir,
+			MissingTags:  []string{fmt.Sprintf("Directory does not exist: %s", dir)},
+		}}, TagComplianceStats{}, nil
+	}
+
 	// Find all Terraform files in the directory
 	files, err := filepath.Glob(filepath.Join(dir, "*.tf"))
 	if err != nil {
@@ -219,6 +230,16 @@ func ValidateDirectory(dir string, cfg *config.Config, logLevel string) (bool, [
 	}
 
 	logging.Info("Found %d Terraform files to analyze", len(files))
+
+	// Check if no Terraform files were found
+	if len(files) == 0 {
+		return false, []TagViolation{{
+			ResourceType: "error",
+			ResourceName: "error",
+			ResourcePath: dir,
+			MissingTags:  []string{fmt.Sprintf("No Terraform files (*.tf) found in directory: %s", dir)},
+		}}, TagComplianceStats{}, nil
+	}
 
 	var allResources []parser.Resource
 	var allProviders []parser.ProviderConfig

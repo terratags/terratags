@@ -56,3 +56,5 @@ testdata/
 # Environment variables
 .env
 .env.local
+
+terratags
