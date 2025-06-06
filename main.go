@@ -189,6 +189,12 @@ func main() {
 
 	// Print results
 	if !valid {
+		// Check if this is a directory/file error
+		if len(violations) == 1 && violations[0].ResourceType == "error" {
+			logging.Error("Error: %s", violations[0].MissingTags[0])
+			os.Exit(1)
+		}
+
 		logging.Print("\nTag validation issues found:")
 		for _, violation := range violations {
 			logging.Print("Resource %s '%s' is missing required tags: %s",
