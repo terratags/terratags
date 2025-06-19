@@ -316,7 +316,7 @@ Terratags can be integrated with [pre-commit](https://pre-commit.com/) to automa
    ```yaml
    repos:
      - repo: https://github.com/terratags/terratags
-       rev: v2.x.y  # Use the latest version
+       rev: v0.3.0  # Use the latest version (available from v0.3.0+)
        hooks:
          - id: terratags
    ```
@@ -335,7 +335,7 @@ You can customize the hook with additional arguments:
 ```yaml
 repos:
   - repo: https://github.com/terratags/terratags
-    rev: v2.x.y
+    rev: v0.3.0
     hooks:
       - id: terratags
         args: [
@@ -352,7 +352,7 @@ Define different hooks for different purposes:
 ```yaml
 repos:
   - repo: https://github.com/terratags/terratags
-    rev: v2.x.y
+    rev: v0.3.0
     hooks:
       # Basic validation on every commit
       - id: terratags
