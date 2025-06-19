@@ -301,6 +301,73 @@ terratags -config config.yaml -dir ./infra -remediate
 terratags -config config.yaml -dir ./infra -exemptions exemptions.yaml
 ```
 
+## Pre-commit Hook Integration
+
+Terratags can be integrated with [pre-commit](https://pre-commit.com/) to automatically validate tags before commits are made to your repository.
+
+### Quick Setup
+
+1. Install pre-commit:
+   ```bash
+   pip install pre-commit
+   ```
+
+2. Add to your `.pre-commit-config.yaml`:
+   ```yaml
+   repos:
+     - repo: https://github.com/terratags/terratags
+       rev: v2.x.y  # Use the latest version
+       hooks:
+         - id: terratags
+   ```
+
+3. Install the hook:
+   ```bash
+   pre-commit install
+   ```
+
+4. Ensure you have a `terratags.yaml` configuration file in your repository root
+
+### Advanced Configuration
+
+You can customize the hook with additional arguments:
+
+```yaml
+repos:
+  - repo: https://github.com/terratags/terratags
+    rev: v2.x.y
+    hooks:
+      - id: terratags
+        args: [
+          --config=custom-config.yaml,
+          --exemptions=exemptions.yaml,
+          --remediate
+        ]
+```
+
+### Multiple Hook Configurations
+
+Define different hooks for different purposes:
+
+```yaml
+repos:
+  - repo: https://github.com/terratags/terratags
+    rev: v2.x.y
+    hooks:
+      # Basic validation on every commit
+      - id: terratags
+        name: terratags-validate
+        args: [--config=terratags.yaml]
+      
+      # Generate report (run manually)
+      - id: terratags
+        name: terratags-report
+        args: [--config=terratags.yaml, --report=tag-report.html]
+        stages: [manual]
+```
+
+See [Pre-commit Documentation](docs/pre-commit.md) for detailed setup instructions and advanced configurations.
+
 ## Integration with CI/CD
 
 Add Terratags to your CI/CD pipeline to enforce tag compliance:

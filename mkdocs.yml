@@ -67,14 +67,17 @@ nav:
     - Default Tags: default-tags.md
     - Logging: logging.md
   - Usage: usage.md
-  - CI/CD Integration: ci-cd.md
+  - Integration:
+    - Pre-commit Hooks: pre-commit.md
+    - CI/CD Integration: ci-cd.md
   - Examples:
     - Example references: examples.md
     - Sample Reports: sample-reports.md
     - User Scenarios: user-scenarios.md
-  - AWSCC Support: awscc_support.md
-  - Azure Support: azure-support.md
-  - Supported Providers: providers.md
+  - Provider Support:
+    - AWSCC Support: awscc_support.md
+    - Azure Support: azure-support.md
+    - Supported Providers: providers.md
   
 extra:
   social:

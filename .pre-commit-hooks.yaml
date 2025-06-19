@@ -1,0 +1,11 @@
+- id: terratags
+  name: Terraform Tag Validation
+  description: Validate required tags on Terraform resources
+  entry: terratags
+  language: golang
+  files: \.tf$
+  args: [--config=terratags.yaml]
+  pass_filenames: false
+  require_serial: false
+  additional_dependencies: []
+  exclude: \.terraform/.*$
