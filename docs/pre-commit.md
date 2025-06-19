@@ -9,7 +9,7 @@ Terratags can be integrated with [pre-commit](https://pre-commit.com/) to automa
    pip install pre-commit
    ```
 
-2. Ensure you have a terratags configuration file in your repository (see [Configuration](../README.md#configuration))
+2. Ensure you have a terratags configuration file in your repository (see [Configuration](../README.md#required-tags-configuration))
 
 ## Basic Setup
 
@@ -18,7 +18,7 @@ Terratags can be integrated with [pre-commit](https://pre-commit.com/) to automa
    ```yaml
    repos:
      - repo: https://github.com/terratags/terratags
-       rev: v2.x.y 
+       rev: v0.3.0  # Use the latest version (available from v0.3.0+)
        hooks:
          - id: terratags
    ```
@@ -43,7 +43,7 @@ Terratags can be integrated with [pre-commit](https://pre-commit.com/) to automa
 ```yaml
 repos:
   - repo: https://github.com/terratags/terratags
-    rev: v2.x.y
+    rev: v0.3.0
     hooks:
       - id: terratags
         args: [--config=custom-config.yaml]
@@ -54,7 +54,7 @@ repos:
 ```yaml
 repos:
   - repo: https://github.com/terratags/terratags
-    rev: v2.x.y
+    rev: v0.3.0
     hooks:
       - id: terratags
         args: [--config=terratags.yaml, --report=tag-report.html]
@@ -67,7 +67,7 @@ repos:
 ```yaml
 repos:
   - repo: https://github.com/terratags/terratags
-    rev: v2.x.y
+    rev: v0.3.0
     hooks:
       - id: terratags
         args: [--config=terratags.yaml, --remediate]
@@ -78,7 +78,7 @@ repos:
 ```yaml
 repos:
   - repo: https://github.com/terratags/terratags
-    rev: v2.x.y
+    rev: v0.3.0
     hooks:
       - id: terratags
         args: [--config=terratags.yaml, --exemptions=exemptions.yaml]
@@ -89,7 +89,7 @@ repos:
 ```yaml
 repos:
   - repo: https://github.com/terratags/terratags
-    rev: v2.x.y
+    rev: v0.3.0
     hooks:
       - id: terratags
         args: [--config=terratags.yaml, --dir=./infrastructure]
@@ -102,7 +102,7 @@ You can define multiple hooks for different purposes:
 ```yaml
 repos:
   - repo: https://github.com/terratags/terratags
-    rev: v2.x.y
+    rev: v0.3.0
     hooks:
       # Basic validation on every commit
       - id: terratags
