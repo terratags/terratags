@@ -8,8 +8,9 @@
 ## Features
 
 - Validates required tags on AWS and Azure resources
+- **Advanced pattern matching** with regex validation for tag values
 - Supports AWS provider default_tags
-- Supports AWSCC provider tag format ( Refer [exclusion list]([https://github.com/terratags/terratags/issues/9](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15)) for resources with non compliant tag schema)
+- Supports AWSCC provider tag format (see [AWSCC exclusion list](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15) for resources with non-compliant tag schemas)
 - Supports Azure providers (azurerm and azapi)
 - Supports azapi provider default_tags
 - Supports module-level tags
@@ -69,14 +70,239 @@ terratags -config config.yaml -dir ./infra
 - `-help`, `-h`: Show help message
 - `-version`, `-V`: Show version information
 
+## Pattern Matching
+
+> **Note**: Pattern validation was introduced in version 0.3.0 and provides advanced regex-based tag value validation.
+
+Terratags supports advanced pattern validation using regular expressions to validate tag values. This allows you to enforce specific formats, naming conventions, and business rules for your tags.
+
+### Pattern Validation Features
+
+- **Regex Support**: Use any valid Go regex pattern for tag value validation
+- **Case Sensitivity**: Patterns are case-sensitive by default (use `--ignore-case` for case-insensitive tag name matching)
+- **Flexible Configuration**: Mix pattern validation with simple presence validation
+- **Clear Error Messages**: Detailed feedback when patterns don't match
+- **Backward Compatibility**: Existing simple configurations continue to work
+
+### Configuration Format
+
+Pattern validation uses an object format instead of the simple array format:
+
+```yaml
+required_tags:
+  TagName:
+    pattern: "regex_pattern_here"
+  
+  # Tag without pattern (just presence validation)
+  SimpleTag: {}
+```
+
+### Common Pattern Examples
+
+#### Environment Validation
+```yaml
+Environment:
+  pattern: "^(dev|test|staging|prod)$"
+```
+- ✅ Matches: `dev`, `test`, `staging`, `prod`
+- ❌ Rejects: `development`, `production`, `DEV`, `Test`
+
+#### Email Validation
+```yaml
+Owner:
+  pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+```
+- ✅ Matches: `devops@company.com`, `team.lead@company.com`
+- ❌ Rejects: `username`, `user@domain`, `@company.com`
+
+#### Project Code Format
+```yaml
+Project:
+  pattern: "^[A-Z]{2,4}-[0-9]{3,6}$"
+```
+- ✅ Matches: `WEB-123456`, `DATA-567890`, `INFRA-890123`
+- ❌ Rejects: `web-123`, `PROJECT`, `ABC-12`, `TOOLONG-1234567`
+
+#### Cost Center Format
+```yaml
+CostCenter:
+  pattern: "^CC-[0-9]{4}$"
+```
+- ✅ Matches: `CC-1234`, `CC-5678`, `CC-9012`
+- ❌ Rejects: `CC123`, `CC-12345`, `cc-1234`, `CostCenter-1234`
+
+#### No Whitespace
+```yaml
+Name:
+  pattern: "^\\S+$"
+```
+- ✅ Matches: `web-server-01`, `data-bucket`, `main-vpc`
+- ❌ Rejects: `web server`, `database 01`, `api gateway`
+
+#### Semantic Versioning
+```yaml
+Version:
+  pattern: "^v?[0-9]+\\.[0-9]+\\.[0-9]+$"
+```
+- ✅ Matches: `1.0.0`, `v2.1.3`, `10.15.2`
+- ❌ Rejects: `1.0`, `v1`, `1.0.0-beta`, `latest`
+
+#### Alphanumeric with Dashes
+```yaml
+ResourceName:
+  pattern: "^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$"
+```
+- ✅ Matches: `web-server`, `api-gateway-v2`, `database01`
+- ❌ Rejects: `-web-server`, `api-gateway-`, `web--server`
+
+### Pattern Validation Examples
+
+#### Complete Configuration
+```yaml
+required_tags:
+  # Strict environment values
+  Environment:
+    pattern: "^(dev|test|staging|prod)$"
+  
+  # Valid email for ownership
+  Owner:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  
+  # Project code format
+  Project:
+    pattern: "^[A-Z]{2,4}-[0-9]{3,6}$"
+  
+  # Cost center format
+  CostCenter:
+    pattern: "^CC-[0-9]{4}$"
+  
+  # No whitespace in names
+  Name:
+    pattern: "^\\S+$"
+  
+  # Simple presence validation (no pattern)
+  Team: {}
+```
+
+#### Mixed Validation
+```yaml
+required_tags:
+  # Pattern validation for critical tags
+  Environment:
+    pattern: "^(dev|test|staging|prod)$"
+  
+  Owner:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  
+  # Simple validation for others
+  Name: {}
+  Project: {}
+  Team: {}
+```
+
+### Error Messages
+
+When pattern validation fails, Terratags provides clear error messages:
+
+```
+Resource aws_instance 'web_server' has tag pattern violations:
+  - Tag 'Environment': value 'Production' does not match required pattern '^(dev|test|staging|prod)$'
+  - Tag 'Owner': value 'DevOps Team' does not match required pattern '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
+  - Tag 'Project': value 'website' does not match required pattern '^[A-Z]{2,4}-[0-9]{3,6}$'
+```
+
+### Testing Patterns
+
+Use the provided examples to test pattern validation:
+
+```bash
+# Test passing patterns
+terratags -config examples/config-patterns.yaml -dir examples/pattern_validation_passing
+
+# Test failing patterns
+terratags -config examples/config-patterns.yaml -dir examples/pattern_validation_failing
+
+# Generate detailed report
+terratags -config examples/config-patterns.yaml -dir examples/pattern_validation_failing -report pattern-report.html
+```
+
+### Pattern Development Tips
+
+1. **Start Simple**: Begin with basic patterns and refine as needed
+2. **Test Thoroughly**: Use both passing and failing examples to validate patterns
+3. **Escape Special Characters**: Remember to escape backslashes in YAML/JSON (`\\` instead of `\`)
+4. **Case Sensitivity**: Patterns are case-sensitive unless using `--ignore-case` flag
+5. **Anchor Patterns**: Use `^` and `$` to match the entire string
+6. **Test Online**: Use regex testing tools to validate patterns before deployment
+
+### Regex Reference
+
+Common regex elements used in tag patterns:
+
+| Element | Description | Example |
+|---------|-------------|---------|
+| `^` | Start of string | `^dev` matches strings starting with "dev" |
+| `$` | End of string | `prod$` matches strings ending with "prod" |
+| `\S` | Non-whitespace character | `^\S+$` matches strings without spaces |
+| `[a-z]` | Character class | `[a-zA-Z]` matches any letter |
+| `[0-9]` | Digit class | `[0-9]{4}` matches exactly 4 digits |
+| `{n,m}` | Quantifier | `{2,4}` matches 2 to 4 occurrences |
+| `+` | One or more | `[a-z]+` matches one or more letters |
+| `*` | Zero or more | `[a-z]*` matches zero or more letters |
+| `\|` | Alternation | `(dev\|test\|prod)` matches any of the three |
+| `\.` | Literal dot | `\.com` matches ".com" literally |
+| `\\` | Escape character | `\\S` in YAML becomes `\S` in regex |
+
+### Migration from Simple Format
+
+Existing simple configurations work unchanged:
+
+```yaml
+# This continues to work
+required_tags:
+  - Name
+  - Environment
+  - Owner
+```
+
+To add pattern validation, convert to object format:
+
+```yaml
+# Enhanced with patterns
+required_tags:
+  Name: {}  # Just presence validation
+  Environment:
+    pattern: "^(dev|test|staging|prod)$"
+  Owner:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+```
+
+### Quick Pattern Reference
+
+| Use Case | Pattern | Example Values |
+|----------|---------|----------------|
+| Environment | `^(dev\|test\|staging\|prod)$` | `dev`, `test`, `staging`, `prod` |
+| Email | `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$` | `devops@company.com`, `team.lead@company.com` |
+| Project Code | `^[A-Z]{2,4}-[0-9]{3,6}$` | `WEB-123456`, `DATA-567890`, `SEC-123456` |
+| Cost Center | `^CC-[0-9]{4}$` | `CC-1234`, `CC-5678`, `CC-9012` |
+| No Whitespace | `^\\S+$` | `web-server-01`, `data-bucket`, `main-vpc` |
+| Version | `^v?[0-9]+\\.[0-9]+\\.[0-9]+$` | `1.0.0`, `v2.1.3`, `10.15.2` |
+
+### Advanced Pattern Matching
+
+For comprehensive pattern matching documentation, including advanced techniques, common patterns library, and troubleshooting guide, see [Pattern Matching Guide](docs/pattern-matching.md).
+
 ## Configuration
 
 ### Required Tags Configuration
 
-Terratags requires a configuration file that specifies which tags must be present on your AWS resources. This file can be in either YAML or JSON format.
+Terratags supports two configuration formats for specifying required tags: a simple format for basic tag presence validation, and an advanced format with regex pattern validation for tag values.
 
-#### YAML Format
+#### Simple Format (Legacy - Fully Supported)
 
+The simple format validates that required tags are present but doesn't validate their values:
+
+**YAML Format:**
 ```yaml
 required_tags:
   - Name
@@ -85,8 +311,7 @@ required_tags:
   - Project
 ```
 
-#### JSON Format
-
+**JSON Format:**
 ```json
 {
   "required_tags": [
@@ -96,6 +321,105 @@ required_tags:
     "Project"
   ]
 }
+```
+
+#### Advanced Format with Pattern Validation
+
+The advanced format allows you to specify regex patterns to validate tag values:
+
+**YAML Format:**
+```yaml
+required_tags:
+  Name:
+    pattern: "^\\S+$"
+  
+  Environment:
+    pattern: "^(dev|test|staging|prod)$"
+  
+  Owner:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  
+  Project:
+    pattern: "^[A-Z]{2,4}-[0-9]{3,6}$"
+  
+  # Tag required but no pattern validation
+  Team: {}
+```
+
+**JSON Format:**
+```json
+{
+  "required_tags": {
+    "Name": {
+      "pattern": "^\\S+$"
+    },
+    "Environment": {
+      "pattern": "^(dev|test|staging|prod)$"
+    },
+    "Owner": {
+      "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    },
+    "Project": {
+      "pattern": "^[A-Z]{2,4}-[0-9]{3,6}$"
+    },
+    "Team": {}
+  }
+}
+```
+
+#### Mixed Format
+
+You can mix both simple and advanced formats in the same configuration:
+
+```yaml
+required_tags:
+  # Simple tags (just check presence)
+  Name: {}
+  Project: {}
+  
+  # Advanced tags with pattern validation
+  Environment:
+    pattern: "^(dev|test|staging|prod)$"
+  
+  Owner:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+```
+
+#### Pattern Validation Features
+
+- **Regex Support**: Use any valid Go regex pattern
+- **Case Sensitivity**: Respects the `--ignore-case` flag for tag name matching
+- **Backward Compatibility**: Existing simple configurations continue to work unchanged
+
+#### Common Patterns
+
+Here are some commonly used patterns:
+
+```yaml
+required_tags:
+  # Environment validation
+  Environment:
+    pattern: "^(dev|test|staging|prod|production)$"
+  
+  # Email validation
+  Owner:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  
+  # Cost center format
+  CostCenter:
+    pattern: "^CC-[0-9]{4}$"
+  
+  # Semantic version
+  Version:
+    pattern: "^v?[0-9]+\\.[0-9]+\\.[0-9]+$"
+  
+  # No whitespace
+  Name:
+    pattern: "^\\S+$"
+  
+  # Alphanumeric with dashes
+  Project:
+    pattern: "^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$"
 ```
 
 ### Exemptions Configuration

@@ -1,0 +1,12 @@
+# Mixed format - some tags with patterns, some without
+required_tags:
+  Name: {}
+  Project: {}
+  
+  Environment:
+    pattern: "^(dev|test|staging|prod)$"
+  
+  Owner:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  
+  Team: {}

@@ -65,6 +65,12 @@ jobs:
             expected_results: 0
           - name: azurerm-passing
             expected_results: 0
+          - name: pattern_validation_passing
+            expected_results: 0
+            config: config-patterns.yaml
+          - name: pattern_validation_failing
+            expected_results: 1
+            config: config-patterns.yaml
 
     steps:
     - uses: actions/checkout@v4
@@ -82,4 +88,4 @@ jobs:
       run: chmod +x ./.github/scripts/test_examples.sh
     
     - name: Test example
-      run: ./.github/scripts/test_examples.sh ${{ matrix.name }} ${{ matrix.expected_results }}
+      run: ./.github/scripts/test_examples.sh ${{ matrix.name }} ${{ matrix.expected_results }} ${{ matrix.config || 'config.yaml' }}
