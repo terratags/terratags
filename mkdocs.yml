@@ -80,6 +80,8 @@ nav:
     - AWSCC Support: awscc_support.md
     - Azure Support: azure-support.md
     - Supported Providers: providers.md
+  - Development:
+    - Architecture: architecture.md
   
 extra:
   social:
