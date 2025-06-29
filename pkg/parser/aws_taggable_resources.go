@@ -780,6 +780,7 @@ var awsTaggableResources = map[string]bool{
 	// AWSCC Provider resources
 	"awscc_accessanalyzer_analyzer":                                           true,
 	"awscc_acmpca_certificate_authority":                                      true,
+	"awscc_aiops_investigation_group":                                         true,
 	"awscc_amazonmq_configuration":                                            true,
 	"awscc_amplify_app":                                                       true,
 	"awscc_amplify_branch":                                                    true,
@@ -1476,6 +1477,7 @@ var awsTaggableResources = map[string]bool{
 	"awscc_wisdom_message_template":                                           true,
 	"awscc_workspaces_connection_alias":                                       true,
 	"awscc_workspaces_workspaces_pool":                                        true,
+	"awscc_workspacesinstances_workspace_instance":                            true,
 	"awscc_workspacesthinclient_environment":                                  true,
 	"awscc_workspacesweb_browser_settings":                                    true,
 	"awscc_workspacesweb_data_protection_settings":                            true,
