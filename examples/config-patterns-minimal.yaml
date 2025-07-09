@@ -1,0 +1,16 @@
+# Minimal pattern validation format
+required_tags:
+  Name:
+    pattern: "^\\S+$"
+  
+  Environment:
+    pattern: "^(dev|test|staging|prod)$"
+  
+  Owner:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+  
+  Project:
+    pattern: "^[A-Z]{2,4}-[0-9]{3,6}$"
+  
+  # Tag required but no pattern validation
+  Team: {}

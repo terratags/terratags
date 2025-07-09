@@ -197,8 +197,20 @@ func main() {
 
 		logging.Print("\nTag validation issues found:")
 		for _, violation := range violations {
-			logging.Print("Resource %s '%s' is missing required tags: %s",
-				violation.ResourceType, violation.ResourceName, strings.Join(violation.MissingTags, ", "))
+			// Display missing tags
+			if len(violation.MissingTags) > 0 {
+				logging.Print("Resource %s '%s' is missing required tags: %s",
+					violation.ResourceType, violation.ResourceName, strings.Join(violation.MissingTags, ", "))
+			}
+			
+			// Display pattern violations
+			if len(violation.PatternViolations) > 0 {
+				logging.Print("Resource %s '%s' has tag pattern violations:",
+					violation.ResourceType, violation.ResourceName)
+				for _, pv := range violation.PatternViolations {
+					logging.Print("  - Tag '%s': %s", pv.TagName, pv.ErrorMessage)
+				}
+			}
 
 			// Show auto-remediation suggestions if requested
 			if autoRemediate {
@@ -213,19 +225,30 @@ func main() {
 					}
 				}
 
-				// Generate remediation code
-				remediation := validator.GenerateRemediationCode(
-					violation.ResourceType,
-					violation.ResourceName,
-					violation.ResourcePath,
-					violation.MissingTags,
-					existingTags)
-				logging.Print("%s", remediation)
+				// Generate remediation code for missing tags
+				if len(violation.MissingTags) > 0 {
+					remediation := validator.GenerateRemediationCode(
+						violation.ResourceType,
+						violation.ResourceName,
+						violation.ResourcePath,
+						violation.MissingTags,
+						existingTags)
+					logging.Print("%s", remediation)
 
-				// Suggest provider default_tags update if appropriate
-				if strings.HasPrefix(violation.ResourceType, "aws_") {
-					logging.Print("\nAlternatively, consider using provider default_tags:")
-					logging.Print("%s", validator.SuggestProviderDefaultTagsUpdate(violation.MissingTags))
+					// Suggest provider default_tags update if appropriate
+					if strings.HasPrefix(violation.ResourceType, "aws_") {
+						logging.Print("\nAlternatively, consider using provider default_tags:")
+						logging.Print("%s", validator.SuggestProviderDefaultTagsUpdate(violation.MissingTags))
+					}
+				}
+				
+				// Generate remediation suggestions for pattern violations
+				if len(violation.PatternViolations) > 0 {
+					logging.Print("\nPattern violation fixes:")
+					for _, pv := range violation.PatternViolations {
+						logging.Print("  - Update tag '%s' value from '%s' to match pattern: %s", 
+							pv.TagName, pv.ActualValue, pv.ExpectedPattern)
+					}
 				}
 			}
 		}

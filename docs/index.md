@@ -17,6 +17,7 @@ Terratags helps enforce these tagging standards across your infrastructure, ensu
 ## Key Features
 
 - **Tag Validation**: Validates required tags on AWS and Azure resources
+- **Pattern Matching**: Advanced regex validation for tag values to enforce naming conventions
 - **Default Tags Support**: Supports AWS provider default_tags
 - **AWSCC Support**: Supports AWSCC provider tag format ( Refer [exclusion list](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15) for resources with non compliant tag schema)
 - **Azure Support**: Supports Azure providers (azurerm and azapi)
