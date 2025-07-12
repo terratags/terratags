@@ -16,12 +16,21 @@ import (
 
 // TagViolation represents a tag validation violation
 type TagViolation struct {
-	ResourceType string
-	ResourceName string
-	ResourcePath string
-	MissingTags  []string
-	IsExempt     bool
-	ExemptReason string
+	ResourceType     string
+	ResourceName     string
+	ResourcePath     string
+	MissingTags      []string
+	PatternViolations []PatternViolation
+	IsExempt         bool
+	ExemptReason     string
+}
+
+// PatternViolation represents a tag value that doesn't match its required pattern
+type PatternViolation struct {
+	TagName         string
+	ActualValue     string
+	ExpectedPattern string
+	ErrorMessage    string
 }
 
 // TagComplianceStats represents statistics about tag compliance
@@ -33,13 +42,15 @@ type TagComplianceStats struct {
 	ExcludedAWSCCResources   []string
 	ExcludedResourcesCount   int
 	ViolationsByTag          map[string]int
+	PatternViolationsByTag   map[string]int
 }
 
 // ValidateResources validates that all resources have the required tags
 func ValidateResources(resources []parser.Resource, providers []parser.ProviderConfig, cfg *config.Config) (bool, []TagViolation, TagComplianceStats, []parser.Resource) {
 	var violations []TagViolation
 	stats := TagComplianceStats{
-		ViolationsByTag: make(map[string]int),
+		ViolationsByTag:        make(map[string]int),
+		PatternViolationsByTag: make(map[string]int),
 	}
 	valid := true
 
@@ -98,44 +109,54 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 			}
 		}
 
-		// Check for missing required tags
+		// Check for missing required tags and pattern violations
 		var missingTags []string
+		var patternViolations []PatternViolation
 		var exemptTags []string
 		var nonExemptMissingTags []string
 		var exemptReason string
 
 		for _, requiredTag := range cfg.Required {
 			// Check if the tag is in the resource's tags
-			tagExists := false
+			var tagValue string
+			var tagExists bool
+			var tagKey string
+
 			if cfg.IgnoreTagCase {
 				// Case-insensitive comparison
 				requiredTagLower := strings.ToLower(requiredTag)
-				for tagKey := range resource.Tags {
-					if strings.ToLower(tagKey) == requiredTagLower {
+				for key, value := range resource.Tags {
+					if strings.ToLower(key) == requiredTagLower {
 						tagExists = true
+						tagValue = value
+						tagKey = key
 						break
 					}
 				}
 			} else {
 				// Case-sensitive comparison (original behavior)
-				_, tagExists = resource.Tags[requiredTag]
+				tagValue, tagExists = resource.Tags[requiredTag]
+				tagKey = requiredTag
 			}
 
 			if !tagExists {
 				// If not in resource tags, check if it's in default tags
-				defaultTagExists := false
+				var defaultTagExists bool
 				if cfg.IgnoreTagCase {
 					// Case-insensitive comparison for default tags
 					requiredTagLower := strings.ToLower(requiredTag)
-					for tagKey := range defaultTags {
-						if strings.ToLower(tagKey) == requiredTagLower {
+					for key, value := range defaultTags {
+						if strings.ToLower(key) == requiredTagLower {
 							defaultTagExists = true
+							tagValue = value
+							tagKey = key
 							break
 						}
 					}
 				} else {
 					// Case-sensitive comparison (original behavior)
-					_, defaultTagExists = defaultTags[requiredTag]
+					tagValue, defaultTagExists = defaultTags[requiredTag]
+					tagKey = requiredTag
 				}
 
 				if !defaultTagExists {
@@ -154,11 +175,33 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 						stats.ViolationsByTag[requiredTag]++
 					}
 				} else {
-					// Tag exists in default_tags, so it's valid
+					// Tag exists in default_tags, validate pattern if defined
 					if len(defaultTags) > 0 {
 						logging.Debug("Resource %s '%s' inherits tag '%s' from provider default_tags",
 							resource.Type, resource.Name, requiredTag)
 					}
+					
+					// Validate pattern for tag from default_tags
+					if valid, errorMsg := cfg.ValidateTagValue(requiredTag, tagValue); !valid {
+						patternViolations = append(patternViolations, PatternViolation{
+							TagName:         tagKey,
+							ActualValue:     tagValue,
+							ExpectedPattern: getPatternForTag(cfg, requiredTag),
+							ErrorMessage:    errorMsg,
+						})
+						stats.PatternViolationsByTag[requiredTag]++
+					}
+				}
+			} else {
+				// Tag exists in resource tags, validate pattern if defined
+				if valid, errorMsg := cfg.ValidateTagValue(requiredTag, tagValue); !valid {
+					patternViolations = append(patternViolations, PatternViolation{
+						TagName:         tagKey,
+						ActualValue:     tagValue,
+						ExpectedPattern: getPatternForTag(cfg, requiredTag),
+						ErrorMessage:    errorMsg,
+					})
+					stats.PatternViolationsByTag[requiredTag]++
 				}
 			}
 		}
@@ -172,20 +215,21 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 		// Determine if the resource is partially exempt (some missing tags are exempt, but others aren't)
 		isPartiallyExempt := isExempt && len(nonExemptMissingTags) > 0
 
-		// If the resource has any missing tags (exempt or not), add it to violations
-		if len(missingTags) > 0 {
-			// If there are any non-exempt missing tags, the resource is not fully compliant
-			if len(nonExemptMissingTags) > 0 {
+		// If the resource has any missing tags or pattern violations, add it to violations
+		if len(missingTags) > 0 || len(patternViolations) > 0 {
+			// If there are any non-exempt missing tags or pattern violations, the resource is not fully compliant
+			if len(nonExemptMissingTags) > 0 || len(patternViolations) > 0 {
 				valid = false
 			}
 
 			violations = append(violations, TagViolation{
-				ResourceType: resource.Type,
-				ResourceName: resource.Name,
-				ResourcePath: resource.Path,
-				MissingTags:  missingTags,
-				IsExempt:     isExempt,
-				ExemptReason: exemptReason,
+				ResourceType:      resource.Type,
+				ResourceName:      resource.Name,
+				ResourcePath:      resource.Path,
+				MissingTags:       missingTags,
+				PatternViolations: patternViolations,
+				IsExempt:          isExempt,
+				ExemptReason:      exemptReason,
 			})
 
 			// Update statistics based on exemption status
@@ -204,6 +248,22 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 	stats.TotalResources = nonExcludedResources
 
 	return valid, violations, stats, resources
+}
+
+// getPatternForTag returns the pattern for a given tag name
+func getPatternForTag(cfg *config.Config, tagName string) string {
+	if cfg.IgnoreTagCase {
+		for name, req := range cfg.RequiredTags {
+			if strings.EqualFold(name, tagName) {
+				return req.Pattern
+			}
+		}
+	} else {
+		if req, exists := cfg.RequiredTags[tagName]; exists {
+			return req.Pattern
+		}
+	}
+	return ""
 }
 
 // ValidateDirectory validates all Terraform files in a directory
@@ -578,7 +638,8 @@ func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg
                                 {{if $v.IsExempt}}
                                 <span class="badge bg-warning ms-2">EXEMPT</span>
                                 {{else}}
-                                <span class="badge bg-danger ms-2">{{len $v.MissingTags}} missing tags</span>
+                                {{$totalViolations := add (len $v.MissingTags) (len $v.PatternViolations)}}
+                                <span class="badge bg-danger ms-2">{{$totalViolations}} violations</span>
                                 {{end}}
                             </button>
                         </h2>
@@ -588,11 +649,24 @@ func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg
                                 <p><strong>Path:</strong> {{$v.ResourcePath}}</p>
                                 {{if $v.IsExempt}}
                                 <p><strong>Status:</strong> <span class="exempt-tag">EXEMPT</span> - {{$v.ExemptReason}}</p>
-                                {{else}}
+                                {{end}}
+                                
+                                {{if $v.MissingTags}}
                                 <p><strong>Missing Tags:</strong></p>
                                 <ul>
                                     {{range $v.MissingTags}}
                                     <li><code>{{.}}</code></li>
+                                    {{end}}
+                                </ul>
+                                {{end}}
+                                
+                                {{if $v.PatternViolations}}
+                                <p><strong>Pattern Violations:</strong></p>
+                                <ul>
+                                    {{range $v.PatternViolations}}
+                                    <li>
+                                        <code>{{.TagName}}</code>: {{.ErrorMessage}}
+                                    </li>
                                     {{end}}
                                 </ul>
                                 {{end}}
@@ -631,9 +705,12 @@ func GenerateHTMLReport(violations []TagViolation, stats TagComplianceStats, cfg
 </body>
 </html>`
 
-	// Create template with a custom function for joining strings
+	// Create template with custom functions
 	tmpl, err := template.New("report").Funcs(template.FuncMap{
 		"join": strings.Join,
+		"add": func(a, b int) int {
+			return a + b
+		},
 	}).Parse(tmplStr)
 
 	if err != nil {

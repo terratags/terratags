@@ -63,6 +63,8 @@ nav:
   - Installation: installation.md
   - Configuration:
     - Required Tags: configuration.md
+    - Pattern Matching: pattern-matching.md
+    - Example Standards: example-standards.md
     - Exemptions: exemptions.md
     - Default Tags: default-tags.md
     - Logging: logging.md
@@ -78,6 +80,8 @@ nav:
     - AWSCC Support: awscc_support.md
     - Azure Support: azure-support.md
     - Supported Providers: providers.md
+  - Development:
+    - Architecture: architecture.md
   
 extra:
   social:

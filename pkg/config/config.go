@@ -5,17 +5,28 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
+// TagRequirement represents a tag requirement with optional pattern validation
+type TagRequirement struct {
+	Pattern string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
+	// Internal field to store compiled regex (not serialized)
+	compiledPattern *regexp.Regexp `json:"-" yaml:"-"`
+}
+
 // Config represents the configuration for tag validation
 type Config struct {
-	Required      []string            `json:"required_tags" yaml:"required_tags"`
-	Exemptions    []ResourceExemption `json:"exemptions" yaml:"exemptions"`
-	ReportPath    string              `json:"report_path" yaml:"report_path"`
-	IgnoreTagCase bool                `json:"-" yaml:"-"` // Runtime option, not from config file
+	RequiredTags  map[string]TagRequirement `json:"required_tags" yaml:"required_tags"`
+	Exemptions    []ResourceExemption       `json:"exemptions" yaml:"exemptions"`
+	ReportPath    string                    `json:"report_path" yaml:"report_path"`
+	IgnoreTagCase bool                      `json:"-" yaml:"-"` // Runtime option, not from config file
+	
+	// Legacy support - will be populated from RequiredTags for backward compatibility
+	Required []string `json:"-" yaml:"-"`
 }
 
 // ResourceExemption represents a resource that is exempt from tag requirements
@@ -48,6 +59,14 @@ func LoadConfig(path string) (*Config, error) {
 	default:
 		return nil, fmt.Errorf("unsupported config file format: %s", ext)
 	}
+
+	// Compile regex patterns and validate
+	if err := config.compilePatterns(); err != nil {
+		return nil, fmt.Errorf("failed to compile regex patterns: %w", err)
+	}
+
+	// Populate legacy Required field for backward compatibility
+	config.populateLegacyRequired()
 
 	return &config, nil
 }
@@ -102,4 +121,164 @@ func (c *Config) IsExemptFromTag(resourceType, resourceName, tagName string) (bo
 		}
 	}
 	return false, ""
+}
+
+// UnmarshalJSON implements custom JSON unmarshaling to support both array and object formats
+func (c *Config) UnmarshalJSON(data []byte) error {
+	// First try to unmarshal as a struct with the new format
+	type configAlias Config
+	var temp struct {
+		RequiredTags interface{}         `json:"required_tags"`
+		Exemptions   []ResourceExemption `json:"exemptions"`
+		ReportPath   string              `json:"report_path"`
+	}
+
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	// Copy non-required_tags fields
+	c.Exemptions = temp.Exemptions
+	c.ReportPath = temp.ReportPath
+	c.RequiredTags = make(map[string]TagRequirement)
+
+	// Handle required_tags field which can be array or object
+	if temp.RequiredTags != nil {
+		switch v := temp.RequiredTags.(type) {
+		case []interface{}:
+			// Array format (legacy)
+			for _, item := range v {
+				if tagName, ok := item.(string); ok {
+					c.RequiredTags[tagName] = TagRequirement{}
+				}
+			}
+		case map[string]interface{}:
+			// Object format (new)
+			for tagName, tagConfig := range v {
+				var req TagRequirement
+				if configMap, ok := tagConfig.(map[string]interface{}); ok {
+					if pattern, exists := configMap["pattern"]; exists {
+						if patternStr, ok := pattern.(string); ok {
+							req.Pattern = patternStr
+						}
+					}
+				}
+				c.RequiredTags[tagName] = req
+			}
+		default:
+			return fmt.Errorf("required_tags must be an array of strings or an object")
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalYAML implements custom YAML unmarshaling to support both array and object formats
+func (c *Config) UnmarshalYAML(value *yaml.Node) error {
+	// First unmarshal the basic structure
+	type configAlias struct {
+		RequiredTags interface{}         `yaml:"required_tags"`
+		Exemptions   []ResourceExemption `yaml:"exemptions"`
+		ReportPath   string              `yaml:"report_path"`
+	}
+	
+	var temp configAlias
+	if err := value.Decode(&temp); err != nil {
+		return err
+	}
+
+	// Copy non-required_tags fields
+	c.Exemptions = temp.Exemptions
+	c.ReportPath = temp.ReportPath
+	c.RequiredTags = make(map[string]TagRequirement)
+
+	// Handle required_tags field which can be array or object
+	if temp.RequiredTags != nil {
+		switch v := temp.RequiredTags.(type) {
+		case []interface{}:
+			// Array format (legacy)
+			for _, item := range v {
+				if tagName, ok := item.(string); ok {
+					c.RequiredTags[tagName] = TagRequirement{}
+				}
+			}
+		case map[string]interface{}:
+			// Object format (new)
+			for tagName, tagConfig := range v {
+				var req TagRequirement
+				if tagConfig == nil {
+					// Empty object like "Name: {}"
+					req = TagRequirement{}
+				} else if configMap, ok := tagConfig.(map[string]interface{}); ok {
+					if pattern, exists := configMap["pattern"]; exists {
+						if patternStr, ok := pattern.(string); ok {
+							req.Pattern = patternStr
+						}
+					}
+				}
+				c.RequiredTags[tagName] = req
+			}
+		default:
+			return fmt.Errorf("required_tags must be an array of strings or an object")
+		}
+	}
+
+	return nil
+}
+
+// compilePatterns compiles all regex patterns in the configuration
+func (c *Config) compilePatterns() error {
+	for tagName, req := range c.RequiredTags {
+		if req.Pattern != "" {
+			compiled, err := regexp.Compile(req.Pattern)
+			if err != nil {
+				return fmt.Errorf("invalid regex pattern for tag '%s': %w", tagName, err)
+			}
+			// Update the requirement with compiled pattern
+			req.compiledPattern = compiled
+			c.RequiredTags[tagName] = req
+		}
+	}
+	return nil
+}
+
+// populateLegacyRequired populates the legacy Required field for backward compatibility
+func (c *Config) populateLegacyRequired() {
+	c.Required = make([]string, 0, len(c.RequiredTags))
+	for tagName := range c.RequiredTags {
+		c.Required = append(c.Required, tagName)
+	}
+}
+
+// ValidateTagValue validates a tag value against its pattern if one is defined
+func (c *Config) ValidateTagValue(tagName, tagValue string) (bool, string) {
+	// Find the tag requirement (case-sensitive or case-insensitive)
+	var req TagRequirement
+	var found bool
+	
+	if c.IgnoreTagCase {
+		for name, requirement := range c.RequiredTags {
+			if strings.EqualFold(name, tagName) {
+				req = requirement
+				found = true
+				break
+			}
+		}
+	} else {
+		req, found = c.RequiredTags[tagName]
+	}
+	
+	if !found || req.compiledPattern == nil {
+		// No pattern defined, so value is valid
+		return true, ""
+	}
+	
+	if req.compiledPattern.MatchString(tagValue) {
+		return true, ""
+	}
+	
+	// Pattern validation failed
+	errorMsg := fmt.Sprintf("value '%s' does not match required pattern '%s'", tagValue, req.Pattern)
+	
+	return false, errorMsg
 }
