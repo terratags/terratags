@@ -988,6 +988,7 @@ var awsTaggableResources = map[string]bool{
 	"awscc_ec2_subnet":                                                        true,
 	"awscc_ec2_traffic_mirror_filter":                                         true,
 	"awscc_ec2_traffic_mirror_filter_rule":                                    true,
+	"awscc_ec2_traffic_mirror_target":                                         true,
 	"awscc_ec2_transit_gateway":                                               true,
 	"awscc_ec2_transit_gateway_attachment":                                    true,
 	"awscc_ec2_transit_gateway_connect":                                       true,
