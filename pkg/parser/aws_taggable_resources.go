@@ -119,6 +119,7 @@ var awsTaggableResources = map[string]bool{
 	"aws_bedrock_provisioned_model_throughput":         true,
 	"aws_bedrockagent_agent":                           true,
 	"aws_bedrockagent_agent_alias":                     true,
+	"aws_bedrockagent_flow":                            true,
 	"aws_bedrockagent_knowledge_base":                  true,
 	"aws_bedrockagent_prompt":                          true,
 	"aws_budgets_budget":                               true,
