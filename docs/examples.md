@@ -2,6 +2,39 @@
 
 This page provides practical examples of how to use Terratags in various scenarios.
 
+## Validation Examples
+
+### Directory Validation (Direct Resources)
+
+Validate resources defined directly in your Terraform files:
+
+```bash
+# Basic validation
+terratags -config config.yaml -dir ./infra
+
+# With HTML report
+terratags -config config.yaml -dir ./infra -report report.html
+
+# With exemptions
+terratags -config config.yaml -dir ./infra -exemptions exemptions.yaml
+```
+
+### Plan Validation (All Resources Including Modules)
+
+Validate all resources including those created by external modules:
+
+```bash
+# Generate plan
+terraform plan -out=tfplan
+terraform show -json tfplan > plan.json
+
+# Validate all resources
+terratags -config config.yaml -plan plan.json
+
+# With HTML report
+terratags -config config.yaml -plan plan.json -report report.html
+```
+
 ## Configuration Examples
 
 ### Basic Required Tags Configuration (YAML)

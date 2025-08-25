@@ -9,11 +9,12 @@
 
 - Validates required tags on AWS and Azure resources
 - **Advanced pattern matching** with regex validation for tag values
+- **Module resource validation** - validates resources created by external modules via Terraform plan analysis
 - Supports AWS provider default_tags
 - Supports AWSCC provider tag format (see [AWSCC exclusion list](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15) for resources with non-compliant tag schemas)
 - Supports Azure providers (azurerm and azapi)
 - Supports azapi provider default_tags
-- Supports module-level tags
+- Supports module-level tags with tag inheritance
 - Supports exemptions for specific resources
 - Generates HTML reports of tag compliance
 - Provides auto-remediation suggestions
@@ -62,7 +63,7 @@ terratags -config config.yaml -dir ./infra
 - `-dir`, `-d`: Path to the Terraform directory to analyze (default: current directory)
 - `-verbose`, `-v`: Enable verbose output
 - `-log-level`, `-l`: Set logging level: DEBUG, INFO, WARN, ERROR (default: ERROR)
-- `-plan`, `-p`: Path to Terraform plan JSON file to analyze
+- `-plan`, `-p`: Path to Terraform plan JSON file to analyze (includes module resource validation)
 - `-report`, `-r`: Path to output HTML report file
 - `-remediate`, `-re`: Show auto-remediation suggestions for non-compliant resources
 - `-exemptions`, `-e`: Path to exemptions file (JSON/YAML)
@@ -593,24 +594,24 @@ See [Azure Support documentation](docs/azure-support.md) for more details.
 
 ## Examples
 
-### Basic Usage
+### Basic Usage (Direct Resources Only)
 
 ```bash
 terratags -config config.yaml -dir ./infra
+```
+
+### Validate Terraform Plan (Includes Module Resources)
+
+```bash
+terraform plan -out=tfplan
+terraform show -json tfplan > plan.json
+terratags -config config.yaml -plan plan.json
 ```
 
 ### Generate HTML Report
 
 ```bash
 terratags -config config.yaml -dir ./infra -report report.html
-```
-
-### Validate Terraform Plan
-
-```bash
-terraform plan -out=tfplan
-terraform show -json tfplan > plan.json
-terratags -config config.yaml -plan plan.json
 ```
 
 ### Show Auto-remediation Suggestions
@@ -697,7 +698,7 @@ See [Pre-commit Documentation](docs/pre-commit.md) for detailed setup instructio
 Add Terratags to your CI/CD pipeline to enforce tag compliance:
 
 ```yaml
-# GitHub Actions example
+# GitHub Actions example - Directory validation
 name: Validate Tags
 
 on:
@@ -719,21 +720,25 @@ jobs:
       - name: Install Terratags
         run: go install github.com/terratags/terratags@latest
         
-      - name: Validate Tags
+      - name: Validate Tags (Direct Resources)
         run: terratags -config config.yaml -dir ./infra
 ```
 
+For comprehensive validation including module resources, use plan-based validation. See [CI/CD documentation](docs/ci-cd.md) for detailed examples.
+
 ## Enhanced Reporting
 
-Terratags now provides enhanced HTML reports with detailed information about tag compliance:
+Terratags provides enhanced HTML reports with detailed information about tag compliance:
 
 - Visual indicators for compliant, non-compliant, and exempt resources
 - Detailed breakdown of tag status for each resource
-- Tracking of tag sources (resource-level vs provider default_tags)
+- **Separate sections for direct resources and module-created resources**
+- **Module path and source information for module resources**
+- Tracking of tag sources (resource-level vs provider default_tags vs module inheritance)
 - Exemption details including reasons for exemptions
 - Summary statistics including exempt resources
 - Tag violation counts by tag name
 
-The HTML report provides a visual representation of tag compliance across your Terraform resources, making it easy to identify which resources need attention and track compliance metrics. You can view the generated HTML report in any web browser.
+The HTML report provides a visual representation of tag compliance across your Terraform resources, making it easy to identify which resources need attention and track compliance metrics. When using plan validation, the report clearly distinguishes between direct resources and those created by modules. You can view the generated HTML report in any web browser.
 
 ![Sample Terratags Report](docs/assets/sample_report.png)

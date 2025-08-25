@@ -297,51 +297,95 @@ func extractModuleTagsFromContent(content []byte, moduleName string) map[string]
 
 // ParseTerraformPlan parses a Terraform plan JSON file and extracts resources with their tags
 func ParseTerraformPlan(planPath string, logLevel string) ([]Resource, error) {
+	directResources, _, err := ParseTerraformPlanWithModules(planPath, logLevel)
+	return directResources, err
+}
+
+// ParseTerraformPlanWithModules parses a Terraform plan JSON file and extracts both direct and module resources
+func ParseTerraformPlanWithModules(planPath string, logLevel string) ([]Resource, []ModuleResource, error) {
 	// Read the plan file
 	planData, err := os.ReadFile(planPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read plan file: %w", err)
+		return nil, nil, fmt.Errorf("failed to read plan file: %w", err)
 	}
 
 	// Parse the plan JSON
 	var plan struct {
 		ResourceChanges []struct {
-			Address string `json:"address"`
-			Type    string `json:"type"`
-			Change  struct {
+			Address       string `json:"address"`
+			ModuleAddress string `json:"module_address,omitempty"`
+			Type          string `json:"type"`
+			Name          string `json:"name"`
+			Change        struct {
 				After map[string]any `json:"after"`
 			} `json:"change"`
 		} `json:"resource_changes"`
+		Configuration struct {
+			RootModule struct {
+				ModuleCalls map[string]struct {
+					Source  string `json:"source"`
+					Version string `json:"version,omitempty"`
+				} `json:"module_calls,omitempty"`
+			} `json:"root_module"`
+		} `json:"configuration"`
 	}
 
 	if err := json.Unmarshal(planData, &plan); err != nil {
-		return nil, fmt.Errorf("failed to parse plan JSON: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse plan JSON: %w", err)
 	}
 
-	var resources []Resource
+	var directResources []Resource
+	var moduleResources []ModuleResource
 
 	// Process each resource change
 	for _, rc := range plan.ResourceChanges {
-		// Check if this is a taggable resource
-		if isTaggableResource(rc.Type) {
-			// Extract resource name from address
-			nameParts := strings.Split(rc.Address, ".")
-			resourceName := nameParts[len(nameParts)-1]
+		if !isTaggableResource(rc.Type) {
+			continue
+		}
 
-			// Extract tags from the "after" state
-			tags := extractTagsFromPlanResource(rc.Change.After)
+		tags := extractTagsFromPlanResource(rc.Change.After)
 
-			resources = append(resources, Resource{
-				Type:       rc.Type,
-				Name:       resourceName,
-				Tags:       tags,
-				Path:       planPath,
-				TagSources: make(map[string]TagSource),
-			})
+		baseResource := Resource{
+			Type:       rc.Type,
+			Name:       rc.Name,
+			Tags:       tags,
+			Path:       planPath,
+			TagSources: make(map[string]TagSource),
+		}
+
+		if rc.ModuleAddress != "" {
+			// This is a module-created resource
+			modulePath := rc.ModuleAddress
+			moduleName := extractModuleName(modulePath)
+			moduleSource := getModuleSource(moduleName, plan.Configuration.RootModule.ModuleCalls)
+
+			moduleResource := ModuleResource{
+				Resource:     baseResource,
+				ModulePath:   modulePath,
+				ModuleName:   moduleName,
+				ModuleSource: moduleSource,
+			}
+			
+			// Initialize TagSources if not already done
+			if moduleResource.TagSources == nil {
+				moduleResource.TagSources = make(map[string]TagSource)
+				// Initialize tag sources for existing tags
+				for key, value := range moduleResource.Tags {
+					moduleResource.TagSources[key] = TagSource{
+						Source: "resource",
+						Value:  value,
+					}
+				}
+			}
+			
+			moduleResources = append(moduleResources, moduleResource)
+		} else {
+			// This is a direct resource
+			directResources = append(directResources, baseResource)
 		}
 	}
 
-	return resources, nil
+	return directResources, moduleResources, nil
 }
 
 // extractTagsFromPlanResource extracts tags from a resource in the plan

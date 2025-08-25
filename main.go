@@ -32,6 +32,7 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "  --log-level, -l <level>   Set logging level: DEBUG, INFO, WARN, ERROR (default: ERROR)\n")
 	fmt.Fprintf(os.Stderr, "  --verbose, -v             Enable verbose output (same as --log-level=INFO)\n")
 	fmt.Fprintf(os.Stderr, "  --plan, -p <file>         Path to Terraform plan JSON file to analyze\n")
+	fmt.Fprintf(os.Stderr, "                            (includes module resource validation)\n")
 	fmt.Fprintf(os.Stderr, "  --report, -r <file>       Path to output HTML report file\n")
 	fmt.Fprintf(os.Stderr, "  --remediate, -re          Show auto-remediation suggestions for non-compliant resources\n")
 	fmt.Fprintf(os.Stderr, "  --exemptions, -e <file>   Path to exemptions file (JSON/YAML)\n")
@@ -162,18 +163,25 @@ func main() {
 	var resources []parser.Resource
 
 	if planFile != "" {
-		// Validate the Terraform plan
-		logging.Info("Validating Terraform plan: %s", planFile)
+		// Plan validation mode - validates both direct and module resources
 		valid, violations, stats, resources = validator.ValidateTerraformPlan(planFile, cfg, logLevel)
 	} else {
-		// Validate the directory
+		// Validate the directory (existing logic)
 		logging.Info("Validating Terraform directory: %s", terraformDir)
 		valid, violations, stats, resources = validator.ValidateDirectory(terraformDir, cfg, logLevel)
 	}
 
 	// Generate HTML report if requested
 	if reportFile != "" {
-		reportContent := validator.GenerateHTMLReport(violations, stats, cfg)
+		var reportContent string
+		if planFile != "" {
+			// Use unified report for plan validation (includes module resources)
+			reportContent = validator.GenerateUnifiedHTMLReport(violations, stats, cfg)
+		} else {
+			// Use existing report for directory validation (backwards compatibility)
+			reportContent = validator.GenerateHTMLReport(violations, stats, cfg)
+		}
+		
 		reportDir := filepath.Dir(reportFile)
 		if reportDir != "." {
 			if err := os.MkdirAll(reportDir, 0755); err != nil {
@@ -282,3 +290,65 @@ func getVersion() (string, string, error) {
 	}
 	return "dev", platform, nil
 }
+
+// displayModuleValidationResults displays validation results including module resources
+func displayModuleValidationResults(result validator.ValidationResultWithModules) {
+	hasIssues := false
+
+	// Display direct resource issues
+	for _, validation := range result.DirectResources {
+		if !validation.IsCompliant {
+			hasIssues = true
+			displayResourceValidation(validation, "Resource")
+		}
+	}
+
+	// Display module resource issues
+	for _, validation := range result.ModuleResources {
+		if !validation.IsCompliant {
+			hasIssues = true
+			displayModuleResourceValidation(validation)
+		}
+	}
+
+	if hasIssues {
+		logging.Info("\nTag validation issues found:")
+	} else {
+		logging.Info("\nAll resources are compliant!")
+	}
+}
+
+// displayResourceValidation displays validation results for a resource
+func displayResourceValidation(validation validator.ResourceValidation, prefix string) {
+	resourcePrefix := fmt.Sprintf("%s %s '%s'", prefix, validation.Type, validation.Name)
+	
+	if len(validation.MissingTags) > 0 {
+		logging.Info("%s is missing required tags: %s", resourcePrefix, strings.Join(validation.MissingTags, ", "))
+	}
+	
+	if len(validation.PatternViolations) > 0 {
+		logging.Info("%s has tag pattern violations:", resourcePrefix)
+		for _, violation := range validation.PatternViolations {
+			logging.Info("  - Tag '%s': %s", violation.TagName, violation.ErrorMessage)
+		}
+	}
+}
+
+// displayModuleResourceValidation displays validation results for a module resource
+func displayModuleResourceValidation(validation validator.ModuleResourceValidation) {
+	prefix := fmt.Sprintf("Module resource %s '%s' (from %s)", 
+		validation.Type, validation.Name, validation.ModulePath)
+	
+	if len(validation.MissingTags) > 0 {
+		logging.Info("%s is missing required tags: %s", prefix, strings.Join(validation.MissingTags, ", "))
+	}
+	
+	if len(validation.PatternViolations) > 0 {
+		logging.Info("%s has tag pattern violations:", prefix)
+		for _, violation := range validation.PatternViolations {
+			logging.Info("  - Tag '%s': %s", violation.TagName, violation.ErrorMessage)
+		}
+	}
+}
+
+

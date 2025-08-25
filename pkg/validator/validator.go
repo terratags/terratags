@@ -14,6 +14,18 @@ import (
 	"github.com/terratags/terratags/pkg/parser"
 )
 
+// ResourceValidation represents validation result for a single resource
+type ResourceValidation struct {
+	Type               string
+	Name               string
+	Path               string
+	IsCompliant        bool
+	MissingTags        []string
+	PatternViolations  []PatternViolation
+	IsExempt           bool
+	ExemptReason       string
+}
+
 // TagViolation represents a tag validation violation
 type TagViolation struct {
 	ResourceType     string
@@ -333,26 +345,94 @@ func ValidateDirectory(dir string, cfg *config.Config, logLevel string) (bool, [
 	return valid, violations, stats, allResources
 }
 
-// ValidateTerraformPlan validates a Terraform plan file
+// ValidateTerraformPlan validates a Terraform plan file including module resources
 func ValidateTerraformPlan(planPath string, cfg *config.Config, logLevel string) (bool, []TagViolation, TagComplianceStats, []parser.Resource) {
-	logging.Info("Analyzing Terraform plan: %s", planPath)
+	logging.Info("Validating Terraform plan with module resources: %s", planPath)
 
-	// Parse the plan
-	resources, err := parser.ParseTerraformPlan(planPath, logLevel)
+	// Parse both direct and module resources from the plan
+	directResources, moduleResources, err := parser.ParseTerraformPlanWithModules(planPath, logLevel)
 	if err != nil {
-		return false, []TagViolation{{
-			ResourceType: "error",
-			ResourceName: "error",
-			ResourcePath: planPath,
-			MissingTags:  []string{fmt.Sprintf("Error parsing Terraform plan: %s", err)},
-		}}, TagComplianceStats{}, nil
+		logging.Error("Error parsing plan: %v", err)
+		return false, nil, TagComplianceStats{}, nil
 	}
 
-	logging.Info("Found %d taggable resources in plan", len(resources))
+	// Load module tags for inheritance from the directory containing the plan
+	terraformDir := filepath.Dir(planPath)
+	inheritance := parser.NewModuleTagInheritance()
+	if err := inheritance.LoadModuleTags(terraformDir); err != nil {
+		logging.Warn("Could not load module tags: %v", err)
+	}
 
-	// Validate resources (no provider default tags in plan output)
-	valid, violations, stats, _ := ValidateResources(resources, []parser.ProviderConfig{}, cfg)
-	return valid, violations, stats, resources
+	// Apply tag inheritance to module resources
+	for i := range moduleResources {
+		inheritance.InheritTags(&moduleResources[i])
+	}
+
+	// Get provider default tags from terraform directory
+	providerTags := make(map[string]map[string]string)
+	files, err := filepath.Glob(filepath.Join(terraformDir, "*.tf"))
+	if err == nil {
+		for _, file := range files {
+			providers, err := parser.ParseProviderBlocks(file)
+			if err == nil {
+				for _, provider := range providers {
+					if len(provider.DefaultTags) > 0 {
+						if provider.Name == "aws" || provider.Name == "awscc" {
+							providerTags["aws"] = provider.DefaultTags
+						} else if provider.Name == "azapi" {
+							providerTags["azapi"] = provider.DefaultTags
+						}
+					}
+				}
+			}
+		}
+	}
+
+	logging.Info("Found %d direct resources and %d module resources", len(directResources), len(moduleResources))
+
+	// Validate both direct and module resources
+	result := ValidateWithModules(directResources, moduleResources, cfg, providerTags)
+	
+	// Extract violations and stats from the result
+	var violations []TagViolation
+	var allResources []parser.Resource
+	
+	// Collect violations from direct resources
+	for _, rv := range result.DirectResources {
+		if !rv.IsCompliant {
+			violations = append(violations, TagViolation{
+				ResourceType: rv.Type,
+				ResourceName: rv.Name,
+				ResourcePath: rv.Path,
+				MissingTags:  rv.MissingTags,
+				PatternViolations: rv.PatternViolations,
+			})
+		}
+		// Note: We can't reconstruct the full Resource from ResourceValidation
+		// This is a limitation of the current design
+	}
+	
+	// Collect violations from module resources
+	for _, mrv := range result.ModuleResources {
+		if !mrv.IsCompliant {
+			violations = append(violations, TagViolation{
+				ResourceType: mrv.Type,
+				ResourceName: mrv.Name,
+				ResourcePath: mrv.ModulePath,
+				MissingTags:  mrv.MissingTags,
+				PatternViolations: mrv.PatternViolations,
+			})
+		}
+	}
+	
+	// Create stats
+	stats := TagComplianceStats{
+		TotalResources:      result.Summary.TotalResources,
+		CompliantResources:  result.Summary.TotalCompliant,
+	}
+	
+	valid := len(violations) == 0
+	return valid, violations, stats, allResources
 }
 
 // GenerateRemediationCode generates HCL code to fix missing tags
@@ -416,6 +496,73 @@ func SuggestProviderDefaultTagsUpdate(missingTags []string) string {
 	sb.WriteString("}")
 
 	return sb.String()
+}
+
+// validateResource validates a single resource and returns ResourceValidation
+func validateResource(resource parser.Resource, cfg *config.Config, providerTags map[string]map[string]string) ResourceValidation {
+	validation := ResourceValidation{
+		Type:              resource.Type,
+		Name:              resource.Name,
+		Path:              resource.Path,
+		IsCompliant:       true,
+		MissingTags:       []string{},
+		PatternViolations: []PatternViolation{},
+	}
+
+	// Get provider default tags for this resource
+	var defaultTags map[string]string
+	if providerTags != nil {
+		// Determine provider type based on resource type
+		if strings.HasPrefix(resource.Type, "aws_") || strings.HasPrefix(resource.Type, "awscc_") {
+			defaultTags = providerTags["aws"]
+		} else if strings.HasPrefix(resource.Type, "azapi_") {
+			defaultTags = providerTags["azapi"]
+		}
+	}
+
+	// Check each required tag
+	for tagName := range cfg.RequiredTags {
+		// Check if resource is exempt from this tag
+		if isExempt, reason := cfg.IsExemptFromTag(resource.Type, resource.Name, tagName); isExempt {
+			validation.IsExempt = true
+			validation.ExemptReason = reason
+			continue
+		}
+
+		// Check if tag exists in resource tags or provider default tags
+		tagValue := ""
+		hasTag := false
+
+		// First check resource-level tags
+		if value, exists := resource.Tags[tagName]; exists {
+			tagValue = value
+			hasTag = true
+		} else if defaultTags != nil {
+			// Then check provider default tags
+			if value, exists := defaultTags[tagName]; exists {
+				tagValue = value
+				hasTag = true
+			}
+		}
+
+		if !hasTag {
+			validation.MissingTags = append(validation.MissingTags, tagName)
+			validation.IsCompliant = false
+		} else {
+			// Validate tag value against pattern if defined
+			if isValid, errorMsg := cfg.ValidateTagValue(tagName, tagValue); !isValid {
+				validation.PatternViolations = append(validation.PatternViolations, PatternViolation{
+					TagName:         tagName,
+					ActualValue:     tagValue,
+					ExpectedPattern: cfg.RequiredTags[tagName].Pattern,
+					ErrorMessage:    errorMsg,
+				})
+				validation.IsCompliant = false
+			}
+		}
+	}
+
+	return validation
 }
 
 // GenerateHTMLReport generates an enhanced HTML report of tag compliance using html/template with Bootstrap styling
