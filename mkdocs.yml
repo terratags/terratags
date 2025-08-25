@@ -69,6 +69,7 @@ nav:
     - Default Tags: default-tags.md
     - Logging: logging.md
   - Usage: usage.md
+  - Module Validation: module-validation.md
   - Integration:
     - Pre-commit Hooks: pre-commit.md
     - CI/CD Integration: ci-cd.md

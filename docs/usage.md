@@ -1,16 +1,33 @@
 # Usage
 
-Terratags can be used in various ways to validate tags on AWS resources in your Terraform configurations.
+Terratags can be used in various ways to validate tags on AWS and Azure resources in your Terraform configurations.
 
-## Basic Usage
+## Validation Modes
 
-The basic usage of Terratags is:
+Terratags supports two validation modes:
+
+### Directory Validation (Direct Resources)
+Analyzes Terraform files directly and validates:
+- Resources defined in your `.tf` files
+- Module calls and their input tags
 
 ```bash
 terratags -config config.yaml -dir ./infra
 ```
 
-This command will analyze all Terraform files in the specified directory and validate that AWS resources have the required tags as defined in your configuration file.
+### Plan Validation (All Resources)
+Analyzes Terraform plan output and validates:
+- Resources defined in your `.tf` files
+- Resources created by external modules
+- Complete infrastructure with tag inheritance
+
+```bash
+terraform plan -out=tfplan
+terraform show -json tfplan > plan.json
+terratags -config config.yaml -plan plan.json
+```
+
+**Recommendation**: Use plan validation for comprehensive coverage including module-created resources.
 
 ## Command Examples
 
@@ -22,9 +39,9 @@ Generate a detailed HTML report of tag compliance:
 terratags -config config.yaml -dir ./infra -report report.html
 ```
 
-### Validate Terraform Plan
+### Validate Terraform Plan (Recommended)
 
-Validate tags in a Terraform plan output:
+Validate tags in a Terraform plan output including module resources:
 
 ```bash
 terraform plan -out=tfplan

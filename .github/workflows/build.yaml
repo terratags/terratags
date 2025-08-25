@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v4
 
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -71,12 +71,15 @@ jobs:
           - name: pattern_validation_failing
             expected_results: 1
             config: config-patterns.yaml
+          - name: plan_validation
+            expected_results: 0
+            plan: plan.json
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v4
     
     - name: Download terratags binary
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v4
       with:
         name: terratags
         path: bin
@@ -88,4 +91,4 @@ jobs:
       run: chmod +x ./.github/scripts/test_examples.sh
     
     - name: Test example
-      run: ./.github/scripts/test_examples.sh ${{ matrix.name }} ${{ matrix.expected_results }} ${{ matrix.config || 'config.yaml' }}
+      run: ./.github/scripts/test_examples.sh ${{ matrix.name }} ${{ matrix.expected_results }} ${{ matrix.config || 'config.yaml' }} ${{ matrix.plan || '' }}

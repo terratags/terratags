@@ -4,12 +4,26 @@
 
 Integrating Terratags into your CI/CD pipeline helps enforce tag compliance across your infrastructure. This page provides examples of how to integrate Terratags with popular CI/CD platforms.
 
+## Validation Approaches
+
+### Directory Validation (Quick)
+Suitable for fast feedback on file changes:
+- Validates direct resources and module calls
+- No provider credentials required
+- Fast execution
+
+### Plan Validation (Comprehensive)
+Recommended for production deployments:
+- Validates all resources including module-created ones
+- Requires provider credentials
+- Complete infrastructure coverage
+
 ## GitHub Actions
 
-Add Terratags to your GitHub Actions workflow:
+### Directory Validation (Fast)
 
 ```yaml
-name: Validate Tags
+name: Validate Tags (Fast)
 
 on:
   pull_request:
@@ -20,7 +34,7 @@ jobs:
   validate-tags:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -34,9 +48,58 @@ jobs:
         run: terratags -config config.yaml -dir ./infra
 ```
 
+### Plan Validation (Comprehensive)
+
+```yaml
+name: Validate Tags (Complete)
+
+on:
+  pull_request:
+    paths:
+      - '**.tf'
+
+jobs:
+  validate-tags:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          
+      - name: Install Terratags
+        run: go install github.com/terratags/terratags@latest
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Generate Plan and Validate
+        run: |
+          terraform plan -out=tfplan
+          terraform show -json tfplan > plan.json
+          terratags -config config.yaml -plan plan.json -report report.html
+          
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tag-validation-report
+          path: report.html
+```
+
 ## GitLab CI
 
-Add Terratags to your GitLab CI pipeline:
+### Directory Validation
 
 ```yaml
 stages:

@@ -1,0 +1,47 @@
+{
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.direct",
+      "type": "aws_s3_bucket",
+      "name": "direct",
+      "change": {
+        "after": {
+          "bucket": "direct-bucket",
+          "tags": {
+            "Name": "DirectBucket",
+            "Environment": "test",
+            "Owner": "devops",
+            "Project": "direct"
+          }
+        }
+      }
+    },
+    {
+      "address": "module.test_module.aws_s3_bucket.module_bucket",
+      "module_address": "module.test_module",
+      "type": "aws_s3_bucket",
+      "name": "module_bucket",
+      "change": {
+        "after": {
+          "bucket": "module-bucket",
+          "tags": {
+            "Name": "ModuleBucket",
+            "Environment": "test",
+            "Owner": "devops",
+            "Project": "module-test"
+          }
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "root_module": {
+      "module_calls": {
+        "test_module": {
+          "source": "./simple_module",
+          "version": null
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"text/template"
 
 	"github.com/terratags/terratags/pkg/config"
 	"github.com/terratags/terratags/pkg/logging"
@@ -32,6 +33,7 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, "  --log-level, -l <level>   Set logging level: DEBUG, INFO, WARN, ERROR (default: ERROR)\n")
 	fmt.Fprintf(os.Stderr, "  --verbose, -v             Enable verbose output (same as --log-level=INFO)\n")
 	fmt.Fprintf(os.Stderr, "  --plan, -p <file>         Path to Terraform plan JSON file to analyze\n")
+	fmt.Fprintf(os.Stderr, "                            (includes module resource validation)\n")
 	fmt.Fprintf(os.Stderr, "  --report, -r <file>       Path to output HTML report file\n")
 	fmt.Fprintf(os.Stderr, "  --remediate, -re          Show auto-remediation suggestions for non-compliant resources\n")
 	fmt.Fprintf(os.Stderr, "  --exemptions, -e <file>   Path to exemptions file (JSON/YAML)\n")
@@ -162,11 +164,10 @@ func main() {
 	var resources []parser.Resource
 
 	if planFile != "" {
-		// Validate the Terraform plan
-		logging.Info("Validating Terraform plan: %s", planFile)
+		// Plan validation mode - validates both direct and module resources
 		valid, violations, stats, resources = validator.ValidateTerraformPlan(planFile, cfg, logLevel)
 	} else {
-		// Validate the directory
+		// Validate the directory (existing logic)
 		logging.Info("Validating Terraform directory: %s", terraformDir)
 		valid, violations, stats, resources = validator.ValidateDirectory(terraformDir, cfg, logLevel)
 	}
@@ -281,4 +282,149 @@ func getVersion() (string, string, error) {
 		return version, platform, nil
 	}
 	return "dev", platform, nil
+}
+
+// displayModuleValidationResults displays validation results including module resources
+func displayModuleValidationResults(result validator.ValidationResultWithModules) {
+	hasIssues := false
+
+	// Display direct resource issues
+	for _, validation := range result.DirectResources {
+		if !validation.IsCompliant {
+			hasIssues = true
+			displayResourceValidation(validation, "Resource")
+		}
+	}
+
+	// Display module resource issues
+	for _, validation := range result.ModuleResources {
+		if !validation.IsCompliant {
+			hasIssues = true
+			displayModuleResourceValidation(validation)
+		}
+	}
+
+	if hasIssues {
+		logging.Info("\nTag validation issues found:")
+	} else {
+		logging.Info("\nAll resources are compliant!")
+	}
+}
+
+// displayResourceValidation displays validation results for a resource
+func displayResourceValidation(validation validator.ResourceValidation, prefix string) {
+	resourcePrefix := fmt.Sprintf("%s %s '%s'", prefix, validation.Type, validation.Name)
+	
+	if len(validation.MissingTags) > 0 {
+		logging.Info("%s is missing required tags: %s", resourcePrefix, strings.Join(validation.MissingTags, ", "))
+	}
+	
+	if len(validation.PatternViolations) > 0 {
+		logging.Info("%s has tag pattern violations:", resourcePrefix)
+		for _, violation := range validation.PatternViolations {
+			logging.Info("  - Tag '%s': %s", violation.TagName, violation.ErrorMessage)
+		}
+	}
+}
+
+// displayModuleResourceValidation displays validation results for a module resource
+func displayModuleResourceValidation(validation validator.ModuleResourceValidation) {
+	prefix := fmt.Sprintf("Module resource %s '%s' (from %s)", 
+		validation.Type, validation.Name, validation.ModulePath)
+	
+	if len(validation.MissingTags) > 0 {
+		logging.Info("%s is missing required tags: %s", prefix, strings.Join(validation.MissingTags, ", "))
+	}
+	
+	if len(validation.PatternViolations) > 0 {
+		logging.Info("%s has tag pattern violations:", prefix)
+		for _, violation := range validation.PatternViolations {
+			logging.Info("  - Tag '%s': %s", violation.TagName, violation.ErrorMessage)
+		}
+	}
+}
+
+// generateModuleHTMLReport generates HTML report including module resources
+func generateModuleHTMLReport(result validator.ValidationResultWithModules, reportPath string, cfg *config.Config) error {
+	tmpl := `<!DOCTYPE html>
+<html>
+<head>
+    <title>Terratags Validation Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .summary { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .compliant { color: #28a745; }
+        .non-compliant { color: #dc3545; }
+        .resource { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .module-section { background-color: #e3f2fd; border-left: 4px solid #2196f3; margin: 20px 0; padding: 15px; }
+        .module-path { font-family: monospace; color: #666; font-size: 0.9em; }
+        .missing-tag { color: #dc3545; font-weight: bold; }
+        .pattern-violation { color: #ff6b35; }
+    </style>
+</head>
+<body>
+    <h1>Terratags Validation Report</h1>
+    
+    <div class="summary">
+        <h2>Summary</h2>
+        <p>Direct Resources: <span class="{{if eq .Summary.CompliantResources .Summary.TotalResources}}compliant{{else}}non-compliant{{end}}">{{.Summary.CompliantResources}}/{{.Summary.TotalResources}} compliant ({{printf "%.1f" .Summary.CompliancePercentage}}%)</span></p>
+        <p>Module Resources: <span class="{{if eq .Summary.ModuleCompliant .Summary.ModuleTotal}}compliant{{else}}non-compliant{{end}}">{{.Summary.ModuleCompliant}}/{{.Summary.ModuleTotal}} compliant</span></p>
+        <p>Overall: <span class="{{if eq .Summary.TotalCompliant .Summary.TotalResources}}compliant{{else}}non-compliant{{end}}">{{.Summary.TotalCompliant}}/{{.Summary.TotalResources}} compliant ({{printf "%.1f" .Summary.CompliancePercent}}%)</span></p>
+    </div>
+
+    {{if .DirectResources}}
+    <div class="section">
+        <h2>Direct Resources</h2>
+        {{range .DirectResources}}
+        <div class="resource {{if .IsCompliant}}compliant{{else}}non-compliant{{end}}">
+            <h3>{{.Type}} "{{.Name}}"</h3>
+            {{if not .IsCompliant}}
+                {{if .MissingTags}}<p class="missing-tag">Missing tags: {{range $i, $tag := .MissingTags}}{{if $i}}, {{end}}{{$tag}}{{end}}</p>{{end}}
+                {{if .PatternViolations}}
+                    <p class="pattern-violation">Pattern violations:</p>
+                    <ul>{{range .PatternViolations}}<li>{{.TagName}}: {{.Error}}</li>{{end}}</ul>
+                {{end}}
+            {{else}}
+                <p class="compliant">✓ All required tags present and valid</p>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+
+    {{if .ModuleResources}}
+    <div class="module-section">
+        <h2>Module Resources</h2>
+        {{range .ModuleResources}}
+        <div class="resource {{if .IsCompliant}}compliant{{else}}non-compliant{{end}}">
+            <h3>{{.Type}} "{{.Name}}"</h3>
+            <p class="module-path">Module: {{.ModulePath}} ({{.ModuleSource}})</p>
+            {{if not .IsCompliant}}
+                {{if .MissingTags}}<p class="missing-tag">Missing tags: {{range $i, $tag := .MissingTags}}{{if $i}}, {{end}}{{$tag}}{{end}}</p>{{end}}
+                {{if .PatternViolations}}
+                    <p class="pattern-violation">Pattern violations:</p>
+                    <ul>{{range .PatternViolations}}<li>{{.TagName}}: {{.Error}}</li>{{end}}</ul>
+                {{end}}
+            {{else}}
+                <p class="compliant">✓ All required tags present and valid</p>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+</body>
+</html>`
+
+	t, err := template.New("report").Parse(tmpl)
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Create(reportPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return t.Execute(file, result)
 }
