@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"text/template"
 
 	"github.com/terratags/terratags/pkg/config"
 	"github.com/terratags/terratags/pkg/logging"
@@ -174,7 +173,15 @@ func main() {
 
 	// Generate HTML report if requested
 	if reportFile != "" {
-		reportContent := validator.GenerateHTMLReport(violations, stats, cfg)
+		var reportContent string
+		if planFile != "" {
+			// Use unified report for plan validation (includes module resources)
+			reportContent = validator.GenerateUnifiedHTMLReport(violations, stats, cfg)
+		} else {
+			// Use existing report for directory validation (backwards compatibility)
+			reportContent = validator.GenerateHTMLReport(violations, stats, cfg)
+		}
+		
 		reportDir := filepath.Dir(reportFile)
 		if reportDir != "." {
 			if err := os.MkdirAll(reportDir, 0755); err != nil {
@@ -344,87 +351,4 @@ func displayModuleResourceValidation(validation validator.ModuleResourceValidati
 	}
 }
 
-// generateModuleHTMLReport generates HTML report including module resources
-func generateModuleHTMLReport(result validator.ValidationResultWithModules, reportPath string, cfg *config.Config) error {
-	tmpl := `<!DOCTYPE html>
-<html>
-<head>
-    <title>Terratags Validation Report</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .summary { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        .compliant { color: #28a745; }
-        .non-compliant { color: #dc3545; }
-        .resource { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        .module-section { background-color: #e3f2fd; border-left: 4px solid #2196f3; margin: 20px 0; padding: 15px; }
-        .module-path { font-family: monospace; color: #666; font-size: 0.9em; }
-        .missing-tag { color: #dc3545; font-weight: bold; }
-        .pattern-violation { color: #ff6b35; }
-    </style>
-</head>
-<body>
-    <h1>Terratags Validation Report</h1>
-    
-    <div class="summary">
-        <h2>Summary</h2>
-        <p>Direct Resources: <span class="{{if eq .Summary.CompliantResources .Summary.TotalResources}}compliant{{else}}non-compliant{{end}}">{{.Summary.CompliantResources}}/{{.Summary.TotalResources}} compliant ({{printf "%.1f" .Summary.CompliancePercentage}}%)</span></p>
-        <p>Module Resources: <span class="{{if eq .Summary.ModuleCompliant .Summary.ModuleTotal}}compliant{{else}}non-compliant{{end}}">{{.Summary.ModuleCompliant}}/{{.Summary.ModuleTotal}} compliant</span></p>
-        <p>Overall: <span class="{{if eq .Summary.TotalCompliant .Summary.TotalResources}}compliant{{else}}non-compliant{{end}}">{{.Summary.TotalCompliant}}/{{.Summary.TotalResources}} compliant ({{printf "%.1f" .Summary.CompliancePercent}}%)</span></p>
-    </div>
 
-    {{if .DirectResources}}
-    <div class="section">
-        <h2>Direct Resources</h2>
-        {{range .DirectResources}}
-        <div class="resource {{if .IsCompliant}}compliant{{else}}non-compliant{{end}}">
-            <h3>{{.Type}} "{{.Name}}"</h3>
-            {{if not .IsCompliant}}
-                {{if .MissingTags}}<p class="missing-tag">Missing tags: {{range $i, $tag := .MissingTags}}{{if $i}}, {{end}}{{$tag}}{{end}}</p>{{end}}
-                {{if .PatternViolations}}
-                    <p class="pattern-violation">Pattern violations:</p>
-                    <ul>{{range .PatternViolations}}<li>{{.TagName}}: {{.Error}}</li>{{end}}</ul>
-                {{end}}
-            {{else}}
-                <p class="compliant">✓ All required tags present and valid</p>
-            {{end}}
-        </div>
-        {{end}}
-    </div>
-    {{end}}
-
-    {{if .ModuleResources}}
-    <div class="module-section">
-        <h2>Module Resources</h2>
-        {{range .ModuleResources}}
-        <div class="resource {{if .IsCompliant}}compliant{{else}}non-compliant{{end}}">
-            <h3>{{.Type}} "{{.Name}}"</h3>
-            <p class="module-path">Module: {{.ModulePath}} ({{.ModuleSource}})</p>
-            {{if not .IsCompliant}}
-                {{if .MissingTags}}<p class="missing-tag">Missing tags: {{range $i, $tag := .MissingTags}}{{if $i}}, {{end}}{{$tag}}{{end}}</p>{{end}}
-                {{if .PatternViolations}}
-                    <p class="pattern-violation">Pattern violations:</p>
-                    <ul>{{range .PatternViolations}}<li>{{.TagName}}: {{.Error}}</li>{{end}}</ul>
-                {{end}}
-            {{else}}
-                <p class="compliant">✓ All required tags present and valid</p>
-            {{end}}
-        </div>
-        {{end}}
-    </div>
-    {{end}}
-</body>
-</html>`
-
-	t, err := template.New("report").Parse(tmpl)
-	if err != nil {
-		return err
-	}
-
-	file, err := os.Create(reportPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	return t.Execute(file, result)
-}
