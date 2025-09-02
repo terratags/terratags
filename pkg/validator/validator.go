@@ -356,37 +356,9 @@ func ValidateTerraformPlan(planPath string, cfg *config.Config, logLevel string)
 		return false, nil, TagComplianceStats{}, nil
 	}
 
-	// Load module tags for inheritance from the directory containing the plan
-	terraformDir := filepath.Dir(planPath)
-	inheritance := parser.NewModuleTagInheritance()
-	if err := inheritance.LoadModuleTags(terraformDir); err != nil {
-		logging.Warn("Could not load module tags: %v", err)
-	}
-
-	// Apply tag inheritance to module resources
-	for i := range moduleResources {
-		inheritance.InheritTags(&moduleResources[i])
-	}
-
-	// Get provider default tags from terraform directory
+	// Plan-based validation uses only plan data - no .tf file parsing needed
+	// Provider defaults and module inheritance are already computed in the plan
 	providerTags := make(map[string]map[string]string)
-	files, err := filepath.Glob(filepath.Join(terraformDir, "*.tf"))
-	if err == nil {
-		for _, file := range files {
-			providers, err := parser.ParseProviderBlocks(file)
-			if err == nil {
-				for _, provider := range providers {
-					if len(provider.DefaultTags) > 0 {
-						if provider.Name == "aws" || provider.Name == "awscc" {
-							providerTags["aws"] = provider.DefaultTags
-						} else if provider.Name == "azapi" {
-							providerTags["azapi"] = provider.DefaultTags
-						}
-					}
-				}
-			}
-		}
-	}
 
 	logging.Info("Found %d direct resources and %d module resources", len(directResources), len(moduleResources))
 
