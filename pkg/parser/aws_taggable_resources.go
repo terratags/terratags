@@ -852,6 +852,8 @@ var awsTaggableResources = map[string]bool{
 	"awscc_batch_service_environment":                                         true,
 	"awscc_bcmdataexports_export":                                             true,
 	"awscc_bedrock_application_inference_profile":                             true,
+	"awscc_bedrock_automated_reasoning_policy":                                true,
+	"awscc_bedrock_automated_reasoning_policy_version":                        true,
 	"awscc_bedrock_blueprint":                                                 true,
 	"awscc_bedrock_data_automation_project":                                   true,
 	"awscc_bedrock_flow_alias":                                                true,
