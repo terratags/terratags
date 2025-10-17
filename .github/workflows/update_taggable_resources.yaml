@@ -1,4 +1,4 @@
-name: Update AWS Taggable Resources
+name: Update Taggable Resources
 
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
     # Allow manual triggering
 
 env:
-  TERRAFORM_VERSION: '1.12.0'
+  TERRAFORM_VERSION: '1.14.0-beta3'
 
 permissions:
   contents: write
@@ -35,15 +35,16 @@ jobs:
       - name: Run update_resources.go script
         run: go run scripts/update_resources.go
 
-      - name: Format aws_taggable_resources.go
+      - name: Format generated files
         run: |
           go fmt pkg/parser/aws_taggable_resources.go
           go fmt pkg/parser/azure_taggable_resources.go
+          go fmt pkg/parser/google_taggable_resources.go
 
       - name: Check for changes
         id: git-check
         run: |
-          if [[ -n $(git status -s pkg/parser/aws_taggable_resources.go) ]]; then
+          if [[ -n $(git status -s pkg/parser/*_taggable_resources.go) ]]; then
             echo "changes=true" >> $GITHUB_OUTPUT
           else
             echo "changes=false" >> $GITHUB_OUTPUT
@@ -54,9 +55,9 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add pkg/parser/aws_taggable_resources.go
-          git commit -m "chore: update AWS taggable resources list $(date +%Y-%m-%d) [skip ci]"
-          git push origin HEAD:update-aws-resources --force
+          git add pkg/parser/aws_taggable_resources.go pkg/parser/azure_taggable_resources.go pkg/parser/google_taggable_resources.go
+          git commit -m "chore: update taggable resources list $(date +%Y-%m-%d) [skip ci]"
+          git push origin HEAD:update-taggable-resources --force
           
       - name: Create Pull Request
         if: steps.git-check.outputs.changes == 'true'
@@ -64,8 +65,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
-            --title "chore: update AWS taggable resources list" \
-            --body "This PR updates the AWS taggable resources list based on the latest AWS provider schema.\nThis is an automated PR created by the weekly update-resources workflow." \
+            --title "chore: update taggable resources list" \
+            --body "This PR updates the taggable resources list for AWS, Azure, and Google providers based on the latest provider schemas.\nThis is an automated PR created by the weekly update-resources workflow." \
             --base main \
-            --head update-aws-resources \
+            --head update-taggable-resources \
             --label "automated,dependencies" || echo "PR already exists or could not be created"
