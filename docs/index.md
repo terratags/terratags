@@ -1,6 +1,6 @@
 # Terratags
 
-Terratags is a tool for validating tags on resources in Terraform configurations.
+Terratags is a tool for validating tags on AWS, Azure, and Google Cloud resources in Terraform configurations.
 
 ## Overview
 
@@ -16,17 +16,18 @@ Terratags helps enforce these tagging standards across your infrastructure, ensu
 
 ## Key Features
 
-- **Tag Validation**: Validates required tags on AWS and Azure resources
+- **Tag Validation**: Validates required tags on AWS, Azure, and Google Cloud resources
 - **Pattern Matching**: Advanced regex validation for tag values to enforce naming conventions
-- **Default Tags Support**: Supports AWS provider default_tags
+- **Default Tags Support**: Supports AWS provider default_tags and Google provider default_labels
 - **AWSCC Support**: Supports AWSCC provider tag format ( Refer [exclusion list](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15) for resources with non compliant tag schema)
 - **Azure Support**: Supports Azure providers (azurerm and azapi)
+- **Google Cloud Support**: Supports Google Cloud provider with labels (GCP uses 'labels' instead of 'tags')
 - **Module-Level Tags**: Supports module-level tags
 - **Exemption Support**: Supports exemptions for specific resources
 - **HTML Reports**: Generates HTML reports of tag compliance
 - **Auto-Remediation**: Provides auto-remediation suggestions
 - **Plan Integration**: Integrates with Terraform plan output
-- **Tag Inheritance**: Tracks tag inheritance from provider default_tags
+- **Tag Inheritance**: Tracks tag inheritance from provider default_tags/default_labels
 - **Exemption Tracking**: Tracks and reports on exemptions
 - **Excluded Resources**: Tracks AWSCC resources with non-compliant tag schemas
 

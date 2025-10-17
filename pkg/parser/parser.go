@@ -140,6 +140,10 @@ func isTaggableResource(resourceType string) bool {
 	if strings.HasPrefix(resourceType, "azapi_") {
 		return azapiTaggableResources[resourceType]
 	}
+	// Check if it's a Google resource
+	if strings.HasPrefix(resourceType, "google_") {
+		return googleTaggableResources[resourceType]
+	}
 	// Use the comprehensive list of AWS and AWSCC taggable resources
 	return awsTaggableResources[resourceType]
 }
@@ -165,6 +169,8 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 		isAzurerm := strings.HasPrefix(resourceType, "azurerm_")
 		// Check if this is an azapi resource
 		isAzapi := strings.HasPrefix(resourceType, "azapi_")
+		// Check if this is a Google resource
+		isGoogle := strings.HasPrefix(resourceType, "google_")
 
 		if isAWSCC {
 			// For AWSCC resources, tags are in the format: tags = [{key = "Key", value = "Value"}]
@@ -218,6 +224,32 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 				}
 			} else {
 				logging.Debug("No tags attribute found in %s %s", resourceType, resourceName)
+			}
+		} else if isGoogle {
+			// For Google resources, labels are in the format: labels = {Key = "Value"}
+			labelsPattern := `labels\s*=\s*{([\s\S]*?)}`
+			labelsRegex := regexp.MustCompile(`(?s)` + labelsPattern)
+			labelsMatch := labelsRegex.FindStringSubmatch(resourceMatch)
+
+			if len(labelsMatch) > 1 {
+				logging.Debug("Found labels attribute in %s %s", resourceType, resourceName)
+
+				// Extract key-value pairs
+				labelContent := labelsMatch[1]
+				keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
+				keyValueRegex := regexp.MustCompile(keyValuePattern)
+				keyValueMatches := keyValueRegex.FindAllStringSubmatch(labelContent, -1)
+
+				for _, match := range keyValueMatches {
+					if len(match) > 2 {
+						key := match[1]
+						value := match[2]
+						logging.Debug("Found label key: %s", key)
+						tags[key] = value
+					}
+				}
+			} else {
+				logging.Debug("No labels attribute found in %s %s", resourceType, resourceName)
 			}
 		} else {
 			// For AWS resources, tags are in the format: tags = {Key = "Value"}
@@ -419,6 +451,19 @@ func extractTagsFromPlanResource(resource map[string]any) map[string]string {
 			for k, v := range tagsMap {
 				if strValue, ok := v.(string); ok {
 					logging.Debug("Found tag key: %s", k)
+					tags[k] = strValue
+				}
+			}
+		}
+	}
+
+	// Check if the resource has labels (for Google resources)
+	if labelsInterface, ok := resource["labels"]; ok {
+		if labelsMap, ok := labelsInterface.(map[string]any); ok {
+			logging.Debug("Found labels in plan resource")
+			for k, v := range labelsMap {
+				if strValue, ok := v.(string); ok {
+					logging.Debug("Found label key: %s", k)
 					tags[k] = strValue
 				}
 			}
