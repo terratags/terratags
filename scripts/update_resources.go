@@ -134,7 +134,14 @@ func hasTagsAttribute(schema ResourceSchema) bool {
 	return hasTags || hasTagsAll
 }
 
-// createTerraformConfig creates a temporary Terraform configuration with AWS, AWSCC, Azurerm and azapi providers
+// hasLabelsAttribute checks if a resource schema has a 'labels' attribute (for GCP)
+func hasLabelsAttribute(schema ResourceSchema) bool {
+	_, hasLabels := schema.Block.Attributes["labels"]
+	_, hasEffectiveLabels := schema.Block.Attributes["effective_labels"]
+	return hasLabels || hasEffectiveLabels
+}
+
+// createTerraformConfig creates a temporary Terraform configuration with AWS, AWSCC, Azurerm, azapi and google providers
 func createTerraformConfig(tempDir string) error {
 	config := `terraform {
   required_providers {
@@ -149,6 +156,9 @@ func createTerraformConfig(tempDir string) error {
     }
     azapi = {
       source = "Azure/azapi"
+    }
+    google = {
+      source = "hashicorp/google"
     }
   }
 }
@@ -169,6 +179,11 @@ provider "azapi" {
   default_tags = {
     environment = "test"
   }
+}
+
+provider "google" {
+  project = "test-project"
+  region  = "us-central1"
 }
 `
 	return os.WriteFile(filepath.Join(tempDir, "main.tf"), []byte(config), 0644)
@@ -246,6 +261,29 @@ func generateAzureGoFile(azurermResources []string, outputFile string) error {
 	return os.WriteFile(outputFile, []byte(content.String()), 0644)
 }
 
+// generateGoogleGoFile generates a Go file with the list of Google taggable resources
+func generateGoogleGoFile(googleResources []string, outputFile string) error {
+	// Sort resources alphabetically
+	sort.Strings(googleResources)
+
+	var content strings.Builder
+	content.WriteString("package parser\n\n")
+
+	content.WriteString("// Google taggable resources\n")
+	content.WriteString("// This list is automatically generated from the provider schemas\n")
+	content.WriteString("// and represents resources that support the 'labels' attribute\n")
+	content.WriteString("var googleTaggableResources = map[string]bool{\n")
+
+	// Google resources
+	content.WriteString("\t// Google Provider resources\n")
+	for _, resource := range googleResources {
+		content.WriteString(fmt.Sprintf("\t\"%s\": true,\n", resource))
+	}
+	content.WriteString("}")
+
+	return os.WriteFile(outputFile, []byte(content.String()), 0644)
+}
+
 func main() {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "terraform-providers")
@@ -317,6 +355,7 @@ func main() {
 	var awsResources []string
 	var awsccResources []string
 	var azurermResources []string
+	var googleResources []string
 
 	// Process AWS provider
 	awsSchema, ok := schema.ProviderSchemas["registry.terraform.io/hashicorp/aws"]
@@ -348,6 +387,16 @@ func main() {
 		}
 	}
 
+	// Process Google provider (GCP uses 'labels' instead of 'tags')
+	googleSchema, ok := schema.ProviderSchemas["registry.terraform.io/hashicorp/google"]
+	if ok {
+		for resourceName, resourceSchema := range googleSchema.ResourceSchemas {
+			if hasLabelsAttribute(resourceSchema) {
+				googleResources = append(googleResources, resourceName)
+			}
+		}
+	}
+
 	// Determine output file path
 	execPath, err := os.Executable()
 	if err != nil {
@@ -359,6 +408,7 @@ func main() {
 	repoRoot := filepath.Dir(scriptDir)
 	awsOutputFile := filepath.Join(repoRoot, "pkg", "parser", "aws_taggable_resources.go")
 	azureOutputFile := filepath.Join(repoRoot, "pkg", "parser", "azure_taggable_resources.go")
+	googleOutputFile := filepath.Join(repoRoot, "pkg", "parser", "google_taggable_resources.go")
 	providersFile := filepath.Join(repoRoot, "docs", "providers.md")
 
 	// If running from the scripts directory directly
@@ -366,6 +416,7 @@ func main() {
 		repoRoot = filepath.Dir(scriptDir)
 		awsOutputFile = filepath.Join(repoRoot, "pkg", "parser", "aws_taggable_resources.go")
 		azureOutputFile = filepath.Join(repoRoot, "pkg", "parser", "azure_taggable_resources.go")
+		googleOutputFile = filepath.Join(repoRoot, "pkg", "parser", "google_taggable_resources.go")
 		providersFile = filepath.Join(repoRoot, "docs", "providers.md")
 	} else {
 		// If running from the repo root with go run
@@ -376,6 +427,7 @@ func main() {
 		}
 		awsOutputFile = filepath.Join(currentDir, "pkg", "parser", "aws_taggable_resources.go")
 		azureOutputFile = filepath.Join(currentDir, "pkg", "parser", "azure_taggable_resources.go")
+		googleOutputFile = filepath.Join(currentDir, "pkg", "parser", "google_taggable_resources.go")
 		providersFile = filepath.Join(currentDir, "docs", "providers.md")
 	}
 
@@ -393,6 +445,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Generate Google Go file
+	err = generateGoogleGoFile(googleResources, googleOutputFile)
+	if err != nil {
+		fmt.Printf("Error generating Google Go file: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Generate providers markdown file
 	err = generateProvidersMarkdown(providers, providersFile)
 	if err != nil {
@@ -400,7 +459,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Successfully updated taggable resources list with %d AWS resources, %d AWSCC resources, and %d Azurerm resources\n",
-		len(awsResources), len(awsccResources), len(azurermResources))
+	fmt.Printf("Successfully updated taggable resources list with %d AWS resources, %d AWSCC resources, %d Azurerm resources, and %d Google resources\n",
+		len(awsResources), len(awsccResources), len(azurermResources), len(googleResources))
 	fmt.Printf("Successfully generated providers information file at %s\n", providersFile)
 }

@@ -3,17 +3,19 @@
   <span style="font-size:48px; font-weight:bold; vertical-align:middle">Terratags</span>
 </p>
 
-<p align="center">Terratags is a tool for validating tags on AWS and Azure resources in Terraform configurations.</p>
+<p align="center">Terratags is a tool for validating tags on AWS, Azure, and Google Cloud resources in Terraform configurations.</p>
 
 ## Features
 
-- Validates required tags on AWS and Azure resources
+- Validates required tags on AWS, Azure, and Google Cloud resources
 - **Advanced pattern matching** with regex validation for tag values
 - **Module resource validation** - validates resources created by external modules via Terraform plan analysis
 - Supports AWS provider default_tags
 - Supports AWSCC provider tag format (see [AWSCC exclusion list](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15) for resources with non-compliant tag schemas)
 - Supports Azure providers (azurerm and azapi)
 - Supports azapi provider default_tags
+- Supports Google Cloud provider with labels (GCP uses 'labels' instead of 'tags')
+- Supports Google provider default_labels
 - Supports module-level tags with tag inheritance
 - Supports exemptions for specific resources
 - Generates HTML reports of tag compliance
@@ -24,7 +26,6 @@
 - Excluded resources tracking for AWSCC resources with non-compliant tag schemas
 
 Open issues for other providers:
-- [Google provider](https://github.com/terratags/terratags/issues/8)
 - [Azure providers](https://github.com/terratags/terratags/issues/7) : Keeping this open as there are additional Azure providers.
 
 ## Not validated
@@ -591,6 +592,68 @@ resource "azapi_resource" "example" {
 ```
 
 See [Azure Support documentation](docs/azure-support.md) for more details.
+
+### Google Cloud Provider Support
+
+Terratags supports the Google Cloud provider for GCP resources. GCP uses 'labels' instead of 'tags' for resource metadata.
+
+#### Google Provider
+
+The Google provider uses a map of key/value pairs for labels:
+
+```terraform
+resource "google_compute_instance" "example" {
+  name         = "example-instance"
+  machine_type = "e2-medium"
+  zone         = "us-central1-a"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-11"
+    }
+  }
+
+  network_interface {
+    network = "default"
+  }
+
+  labels = {
+    Environment = "Production"
+    Project     = "Terratags"
+    Name        = "example-instance"
+  }
+}
+```
+
+#### Google Provider with default_labels
+
+The Google provider supports default_labels at the provider level:
+
+```terraform
+provider "google" {
+  project = "my-project-id"
+  region  = "us-central1"
+
+  default_labels = {
+    Environment = "Production"
+    Owner       = "team-a"
+  }
+}
+
+resource "google_storage_bucket" "example" {
+  name     = "example-bucket"
+  location = "US"
+
+  labels = {
+    Name    = "example-bucket"
+    Project = "demo"
+  }
+}
+```
+
+In this example, the bucket will have all four required labels: `Name` and `Project` from the resource-level labels, and `Environment` and `Owner` from the provider's default_labels.
+
+**Note:** GCP uses 'labels' instead of 'tags', but terratags treats them the same way for validation purposes.
 
 ## Examples
 
