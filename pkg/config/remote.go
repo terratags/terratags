@@ -29,10 +29,12 @@ func FetchRemoteConfig(remotePath string) ([]byte, error) {
 		return nil, fmt.Errorf("unsupported file type: must be .yaml, .yml, or .json")
 	}
 	
+	// Check Git first as it's more specific
 	if isGitURL(remotePath) {
 		return fetchFromGit(remotePath)
 	}
 	
+	// HTTP check is simpler, do it second
 	if isHTTPURL(remotePath) {
 		return fetchFromHTTP(remotePath)
 	}
@@ -41,8 +43,8 @@ func FetchRemoteConfig(remotePath string) ([]byte, error) {
 }
 
 func hasValidExtension(path string) bool {
-	// Remove query parameters
-	if idx := strings.Index(path, "?"); idx != -1 {
+	// Remove query parameters if present
+	if idx := strings.IndexByte(path, '?'); idx != -1 {
 		path = path[:idx]
 	}
 	ext := strings.ToLower(filepath.Ext(path))
@@ -54,16 +56,13 @@ func isHTTPURL(path string) bool {
 }
 
 func isGitURL(path string) bool {
-	// Git SSH format
+	// Git SSH format - most specific check first
 	if strings.HasPrefix(path, "git@") {
 		return true
 	}
 	// Git HTTPS with .git and // separator (Terraform/Checkov convention)
-	if (strings.HasPrefix(path, "https://") || strings.HasPrefix(path, "http://")) && 
-	   strings.Contains(path, ".git//") {
-		return true
-	}
-	return false
+	return (strings.HasPrefix(path, "https://") || strings.HasPrefix(path, "http://")) && 
+	       strings.Contains(path, ".git//")
 }
 
 func fetchFromHTTP(urlStr string) ([]byte, error) {
@@ -115,11 +114,21 @@ func fetchFromGit(gitPath string) ([]byte, error) {
 	cleanPath := filepath.Clean(filePath)
 	fullPath := filepath.Join(tmpDir, cleanPath)
 	
-	// Ensure the resolved path is still within tmpDir
-	if !strings.HasPrefix(fullPath, tmpDir) {
+	// Ensure the resolved path is still within tmpDir using absolute paths
+	absFullPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve file path: %w", err)
+	}
+	absTmpDir, err := filepath.Abs(tmpDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve temp directory: %w", err)
+	}
+	
+	if !strings.HasPrefix(absFullPath, absTmpDir+string(filepath.Separator)) {
 		return nil, fmt.Errorf("invalid file path: outside repository bounds")
 	}
 	
+	// #nosec G304 -- Path is validated to be within tmpDir bounds above
 	return os.ReadFile(fullPath)
 }
 
@@ -129,30 +138,38 @@ func fetchFromGit(gitPath string) ([]byte, error) {
 //   - https://github.com/org/repo.git//config.yaml?ref=main
 //   - git@github.com:org/repo.git//path/to/config.yaml?ref=v1.0.0
 func parseGitURL(gitPath string) (repoURL, filePath, ref string, err error) {
-	// Find the position after the protocol (if present)
-	start := 0
-	if strings.HasPrefix(gitPath, "https://") {
-		start = len("https://")
-	} else if strings.HasPrefix(gitPath, "http://") {
-		start = len("http://")
-	}
-	
-	// Find the "//" separator after the protocol
-	idx := strings.Index(gitPath[start:], "//")
+	// Find the "//" separator
+	idx := strings.Index(gitPath, "//")
 	if idx == -1 {
 		return "", "", "", fmt.Errorf("invalid git URL format, expected: <git-url>//<file-path>")
 	}
 	
-	// Split at the actual separator position
-	repoURL = gitPath[:start+idx]
-	remainder := gitPath[start+idx+2:] // +2 to skip the "//"
+	// Handle protocol prefixes more efficiently
+	start := 0
+	if strings.HasPrefix(gitPath, "https://") {
+		start = 8 // len("https://")
+		idx = strings.Index(gitPath[start:], "//")
+		if idx == -1 {
+			return "", "", "", fmt.Errorf("invalid git URL format, expected: <git-url>//<file-path>")
+		}
+		idx += start
+	} else if strings.HasPrefix(gitPath, "http://") {
+		start = 7 // len("http://")
+		idx = strings.Index(gitPath[start:], "//")
+		if idx == -1 {
+			return "", "", "", fmt.Errorf("invalid git URL format, expected: <git-url>//<file-path>")
+		}
+		idx += start
+	}
 	
-	// Extract ref parameter
-	if strings.Contains(remainder, "?") {
-		pathAndQuery := strings.SplitN(remainder, "?", 2)
-		filePath = pathAndQuery[0]
+	repoURL = gitPath[:idx]
+	remainder := gitPath[idx+2:] // +2 to skip the "//"
+	
+	// Extract ref parameter if present
+	if qIdx := strings.IndexByte(remainder, '?'); qIdx != -1 {
+		filePath = remainder[:qIdx]
 		
-		query, err := url.ParseQuery(pathAndQuery[1])
+		query, err := url.ParseQuery(remainder[qIdx+1:])
 		if err != nil {
 			return "", "", "", fmt.Errorf("failed to parse query parameters: %w", err)
 		}
