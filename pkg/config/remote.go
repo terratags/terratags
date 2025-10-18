@@ -112,7 +112,15 @@ func fetchFromGit(gitPath string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to clone git repository: %w", err)
 	}
 	
-	return os.ReadFile(filepath.Join(tmpDir, filepath.Clean(filePath)))
+	cleanPath := filepath.Clean(filePath)
+	fullPath := filepath.Join(tmpDir, cleanPath)
+	
+	// Ensure the resolved path is still within tmpDir
+	if !strings.HasPrefix(fullPath, tmpDir) {
+		return nil, fmt.Errorf("invalid file path: outside repository bounds")
+	}
+	
+	return os.ReadFile(fullPath)
 }
 
 // parseGitURL parses a Git URL following Terraform/Checkov conventions
