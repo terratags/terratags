@@ -65,6 +65,10 @@ jobs:
             expected_results: 0
           - name: azurerm-passing
             expected_results: 0
+          - name: google_labels
+            expected_results: 1
+          - name: google_passing
+            expected_results: 0
           - name: pattern_validation_passing
             expected_results: 0
             config: config-patterns.yaml
