@@ -63,6 +63,7 @@ nav:
   - Installation: installation.md
   - Configuration:
     - Required Tags: configuration.md
+    - Remote Config Files: remote-config.md
     - Pattern Matching: pattern-matching.md
     - Example Standards: example-standards.md
     - Exemptions: exemptions.md

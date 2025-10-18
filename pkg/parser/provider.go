@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -18,7 +19,7 @@ type ProviderConfig struct {
 
 // ParseProviderBlocks parses a Terraform file and extracts provider configurations
 func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}

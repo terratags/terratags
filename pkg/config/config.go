@@ -37,15 +37,38 @@ type ResourceExemption struct {
 	Reason       string   `json:"reason" yaml:"reason"`
 }
 
-// LoadConfig loads the configuration from a JSON or YAML file
+// LoadConfig loads the configuration from a JSON or YAML file (local or remote)
+// Supports:
+// - Local file paths: ./config.yaml, /path/to/config.json
+// - HTTP/HTTPS URLs: https://example.com/config.yaml
+// - Git HTTPS: https://github.com/org/repo.git//path/to/config.yaml?ref=main
+// - Git SSH: git@github.com:org/repo.git//path/to/config.yaml?ref=main
 func LoadConfig(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+	var data []byte
+	var err error
+	var ext string
+	
+	// Check if it's a remote URL
+	if IsRemoteURL(path) {
+		data, err = FetchRemoteConfig(path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch remote config: %w", err)
+		}
+		// Extract extension from URL
+		ext = strings.ToLower(filepath.Ext(path))
+		if idx := strings.Index(ext, "?"); idx != -1 {
+			ext = ext[:idx]
+		}
+	} else {
+		// Local file
+		data, err = os.ReadFile(filepath.Clean(path))
+		if err != nil {
+			return nil, fmt.Errorf("failed to read config file: %w", err)
+		}
+		ext = strings.ToLower(filepath.Ext(path))
 	}
 
 	var config Config
-	ext := strings.ToLower(filepath.Ext(path))
 
 	switch ext {
 	case ".json":
@@ -73,7 +96,7 @@ func LoadConfig(path string) (*Config, error) {
 
 // LoadExemptions loads exemptions from a JSON or YAML file
 func LoadExemptions(path string) ([]ResourceExemption, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read exemptions file: %w", err)
 	}

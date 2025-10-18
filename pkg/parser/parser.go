@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -30,7 +31,7 @@ type TagSource struct {
 
 // ParseFile parses a Terraform file and extracts resources with their tags
 func ParseFile(path string, logLevel string) ([]Resource, error) {
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
@@ -336,7 +337,7 @@ func ParseTerraformPlan(planPath string, logLevel string) ([]Resource, error) {
 // ParseTerraformPlanWithModules parses a Terraform plan JSON file and extracts both direct and module resources
 func ParseTerraformPlanWithModules(planPath string, logLevel string) ([]Resource, []ModuleResource, error) {
 	// Read the plan file
-	planData, err := os.ReadFile(planPath)
+	planData, err := os.ReadFile(filepath.Clean(planPath))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read plan file: %w", err)
 	}

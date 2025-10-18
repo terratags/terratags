@@ -10,6 +10,7 @@
 - Validates required tags on AWS, Azure, and Google Cloud resources
 - **Advanced pattern matching** with regex validation for tag values
 - **Module resource validation** - validates resources created by external modules via Terraform plan analysis
+- **Remote config files** - load config from HTTP/HTTPS URLs or Git repositories
 - Supports AWS provider default_tags
 - Supports AWSCC provider tag format (see [AWSCC exclusion list](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15) for resources with non-compliant tag schemas)
 - Supports Azure providers (azurerm and azapi)
@@ -58,9 +59,29 @@ See [installation docs](docs/installation.md) for more options.
 terratags -config config.yaml -dir ./infra
 ```
 
+### Remote Config Files
+
+Terratags supports loading config files from remote locations:
+
+```bash
+# HTTP/HTTPS URL
+terratags -config https://example.com/configs/terratags.yaml -dir ./infra
+
+# Git repository (HTTPS)
+terratags -config https://github.com/org/configs.git//terratags.yaml?ref=main -dir ./infra
+
+# Git repository (SSH)
+terratags -config git@github.com:org/configs.git//path/to/config.yaml?ref=v1.0.0 -dir ./infra
+```
+
+See [Remote Config Examples](examples/remote_config/README.md) for more details.
+
 ### Options
 
-- `-config`, `-c`: Path to the config file (JSON/YAML) containing required tag keys (required)
+- `-config`, `-c`: Path or URL to the config file (JSON/YAML) containing required tag keys (required)
+  - Supports local paths: `./config.yaml`, `/path/to/config.json`
+  - Supports HTTP/HTTPS URLs: `https://example.com/config.yaml`
+  - Supports Git URLs: `https://github.com/org/repo.git//path/to/config.yaml?ref=main`
 - `-dir`, `-d`: Path to the Terraform directory to analyze (default: current directory)
 - `-verbose`, `-v`: Enable verbose output
 - `-log-level`, `-l`: Set logging level: DEBUG, INFO, WARN, ERROR (default: ERROR)

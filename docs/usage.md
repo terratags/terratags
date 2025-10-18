@@ -31,6 +31,26 @@ terratags -config config.yaml -plan plan.json
 
 ## Command Examples
 
+### Basic Usage
+
+```bash
+terratags -config config.yaml -dir ./infra
+```
+
+### Remote Config Files
+
+Load configuration from remote locations:
+
+```bash
+# HTTP/HTTPS URL
+terratags -config https://example.com/configs/terratags.yaml -dir ./infra
+
+# Git repository
+terratags -config https://github.com/org/configs.git//terratags.yaml?ref=main -dir ./infra
+```
+
+See [Remote Config Files](remote-config.md) for more details.
+
 ### Generate HTML Report
 
 Generate a detailed HTML report of tag compliance:
