@@ -61,7 +61,7 @@ func LoadConfig(path string) (*Config, error) {
 		}
 	} else {
 		// Local file
-		data, err = os.ReadFile(path)
+		data, err = os.ReadFile(filepath.Clean(path))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read config file: %w", err)
 		}
@@ -96,7 +96,7 @@ func LoadConfig(path string) (*Config, error) {
 
 // LoadExemptions loads exemptions from a JSON or YAML file
 func LoadExemptions(path string) ([]ResourceExemption, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read exemptions file: %w", err)
 	}
