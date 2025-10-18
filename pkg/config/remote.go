@@ -58,6 +58,7 @@ func isGitURL(path string) bool {
 	if strings.HasPrefix(path, "git@") {
 		return true
 	}
+	// Git HTTPS with .git and // separator (Terraform/Checkov convention)
 	if (strings.HasPrefix(path, "https://") || strings.HasPrefix(path, "http://")) && 
 	   strings.Contains(path, ".git//") {
 		return true
@@ -111,9 +112,10 @@ func fetchFromGit(gitPath string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to clone git repository: %w", err)
 	}
 	
-	return os.ReadFile(filepath.Join(tmpDir, filePath))
+	return os.ReadFile(filepath.Join(tmpDir, filepath.Clean(filePath)))
 }
 
+// parseGitURL parses a Git URL following Terraform/Checkov conventions
 // Format: <git-url>//<file-path>?ref=<branch-or-tag>
 // Examples:
 //   - https://github.com/org/repo.git//config.yaml?ref=main
