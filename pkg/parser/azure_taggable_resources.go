@@ -283,6 +283,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_oracle_cloud_vm_cluster":                                            true,
 	"azurerm_oracle_exadata_infrastructure":                                      true,
 	"azurerm_oracle_exascale_database_storage_vault":                             true,
+	"azurerm_oracle_resource_anchor":                                             true,
 	"azurerm_orbital_contact_profile":                                            true,
 	"azurerm_orbital_spacecraft":                                                 true,
 	"azurerm_orchestrated_virtual_machine_scale_set":                             true,
