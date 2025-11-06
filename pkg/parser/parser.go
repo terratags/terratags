@@ -350,7 +350,8 @@ func ParseTerraformPlanWithModules(planPath string, logLevel string) ([]Resource
 			Type          string `json:"type"`
 			Name          string `json:"name"`
 			Change        struct {
-				After map[string]any `json:"after"`
+				Actions []string       `json:"actions"`
+				After   map[string]any `json:"after"`
 			} `json:"change"`
 		} `json:"resource_changes"`
 		Configuration struct {
@@ -373,6 +374,26 @@ func ParseTerraformPlanWithModules(planPath string, logLevel string) ([]Resource
 	// Process each resource change
 	for _, rc := range plan.ResourceChanges {
 		if !isTaggableResource(rc.Type) {
+			continue
+		}
+
+		// Skip resources that are being deleted
+		// In Terraform plan JSON, delete operations have "delete" in actions and after is null
+		isDelete := false
+		for _, action := range rc.Change.Actions {
+			if action == "delete" {
+				isDelete = true
+				break
+			}
+		}
+		if isDelete {
+			logging.Debug("Skipping validation for resource being deleted: %s.%s", rc.Type, rc.Name)
+			continue
+		}
+
+		// Also skip if after is null (which happens for deletions)
+		if rc.Change.After == nil {
+			logging.Debug("Skipping validation for resource with null after state: %s.%s", rc.Type, rc.Name)
 			continue
 		}
 
