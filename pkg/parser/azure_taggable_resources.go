@@ -342,7 +342,6 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_shared_image_version":                                               true,
 	"azurerm_signalr_service":                                                    true,
 	"azurerm_snapshot":                                                           true,
-	"azurerm_spatial_anchors_account":                                            true,
 	"azurerm_spring_cloud_service":                                               true,
 	"azurerm_ssh_public_key":                                                     true,
 	"azurerm_stack_hci_cluster":                                                  true,
