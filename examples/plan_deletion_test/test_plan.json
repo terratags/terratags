@@ -1,0 +1,39 @@
+{
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.keep_bucket",
+      "type": "aws_s3_bucket",
+      "name": "keep_bucket",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "bucket": "keep-bucket",
+          "tags": {
+            "Name": "KeepBucket",
+            "Environment": "test",
+            "Owner": "devops",
+            "Project": "terratags"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket.delete_bucket",
+      "type": "aws_s3_bucket",
+      "name": "delete_bucket",
+      "change": {
+        "actions": ["delete"],
+        "after": null
+      }
+    },
+    {
+      "address": "random_id.suffix",
+      "type": "random_id",
+      "name": "suffix",
+      "change": {
+        "actions": ["delete"],
+        "after": null
+      }
+    }
+  ]
+}

@@ -78,6 +78,9 @@ jobs:
           - name: plan_validation
             expected_results: 0
             plan: plan.json
+          - name: plan_deletion_test
+            expected_results: 0
+            plan: test_plan.json
 
     steps:
     - uses: actions/checkout@v5
