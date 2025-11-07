@@ -66,7 +66,7 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 		if len(match) > 2 {
 			providerName := "azapi"
 			tagContent := match[2]
-			
+
 			// Extract key-value pairs from the tags block
 			defaultTags := make(map[string]string)
 			keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
@@ -80,7 +80,7 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 					defaultTags[key] = value
 				}
 			}
-			
+
 			if len(defaultTags) > 0 {
 				logging.Debug("Found azapi provider with default_tags")
 				for tag, value := range defaultTags {
@@ -104,7 +104,7 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 		if len(match) > 2 {
 			providerName := "google"
 			labelContent := match[2]
-			
+
 			// Extract key-value pairs from the labels block
 			defaultLabels := make(map[string]string)
 			keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
@@ -118,7 +118,7 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 					defaultLabels[key] = value
 				}
 			}
-			
+
 			if len(defaultLabels) > 0 {
 				logging.Debug("Found google provider with default_labels")
 				for label, value := range defaultLabels {

@@ -181,7 +181,7 @@ func main() {
 			// Use existing report for directory validation (backwards compatibility)
 			reportContent = validator.GenerateHTMLReport(violations, stats, cfg)
 		}
-		
+
 		reportDir := filepath.Dir(reportFile)
 		if reportDir != "." {
 			if err := os.MkdirAll(reportDir, 0755); err != nil {
@@ -210,7 +210,7 @@ func main() {
 				logging.Print("Resource %s '%s' is missing required tags: %s",
 					violation.ResourceType, violation.ResourceName, strings.Join(violation.MissingTags, ", "))
 			}
-			
+
 			// Display pattern violations
 			if len(violation.PatternViolations) > 0 {
 				logging.Print("Resource %s '%s' has tag pattern violations:",
@@ -249,12 +249,12 @@ func main() {
 						logging.Print("%s", validator.SuggestProviderDefaultTagsUpdate(violation.MissingTags))
 					}
 				}
-				
+
 				// Generate remediation suggestions for pattern violations
 				if len(violation.PatternViolations) > 0 {
 					logging.Print("\nPattern violation fixes:")
 					for _, pv := range violation.PatternViolations {
-						logging.Print("  - Update tag '%s' value from '%s' to match pattern: %s", 
+						logging.Print("  - Update tag '%s' value from '%s' to match pattern: %s",
 							pv.TagName, pv.ActualValue, pv.ExpectedPattern)
 					}
 				}
@@ -321,11 +321,11 @@ func displayModuleValidationResults(result validator.ValidationResultWithModules
 // displayResourceValidation displays validation results for a resource
 func displayResourceValidation(validation validator.ResourceValidation, prefix string) {
 	resourcePrefix := fmt.Sprintf("%s %s '%s'", prefix, validation.Type, validation.Name)
-	
+
 	if len(validation.MissingTags) > 0 {
 		logging.Info("%s is missing required tags: %s", resourcePrefix, strings.Join(validation.MissingTags, ", "))
 	}
-	
+
 	if len(validation.PatternViolations) > 0 {
 		logging.Info("%s has tag pattern violations:", resourcePrefix)
 		for _, violation := range validation.PatternViolations {
@@ -336,13 +336,13 @@ func displayResourceValidation(validation validator.ResourceValidation, prefix s
 
 // displayModuleResourceValidation displays validation results for a module resource
 func displayModuleResourceValidation(validation validator.ModuleResourceValidation) {
-	prefix := fmt.Sprintf("Module resource %s '%s' (from %s)", 
+	prefix := fmt.Sprintf("Module resource %s '%s' (from %s)",
 		validation.Type, validation.Name, validation.ModulePath)
-	
+
 	if len(validation.MissingTags) > 0 {
 		logging.Info("%s is missing required tags: %s", prefix, strings.Join(validation.MissingTags, ", "))
 	}
-	
+
 	if len(validation.PatternViolations) > 0 {
 		logging.Info("%s has tag pattern violations:", prefix)
 		for _, violation := range validation.PatternViolations {
@@ -350,5 +350,3 @@ func displayModuleResourceValidation(validation validator.ModuleResourceValidati
 		}
 	}
 }
-
-

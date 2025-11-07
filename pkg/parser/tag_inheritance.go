@@ -48,7 +48,7 @@ func (m *ModuleTagInheritance) InheritTags(moduleResource *ModuleResource) {
 	if moduleResource == nil {
 		return
 	}
-	
+
 	if moduleTags, exists := m.moduleTags[moduleResource.ModuleName]; exists {
 		// Merge module tags with resource tags (resource tags take precedence)
 		for key, value := range moduleTags {
@@ -58,7 +58,7 @@ func (m *ModuleTagInheritance) InheritTags(moduleResource *ModuleResource) {
 					Source: "module_call",
 					Value:  value,
 				}
-				logging.Debug("Inherited tag %s=%s for resource %s from module %s", 
+				logging.Debug("Inherited tag %s=%s for resource %s from module %s",
 					key, value, moduleResource.Name, moduleResource.ModuleName)
 			}
 		}

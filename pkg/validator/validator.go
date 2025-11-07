@@ -16,25 +16,25 @@ import (
 
 // ResourceValidation represents validation result for a single resource
 type ResourceValidation struct {
-	Type               string
-	Name               string
-	Path               string
-	IsCompliant        bool
-	MissingTags        []string
-	PatternViolations  []PatternViolation
-	IsExempt           bool
-	ExemptReason       string
+	Type              string
+	Name              string
+	Path              string
+	IsCompliant       bool
+	MissingTags       []string
+	PatternViolations []PatternViolation
+	IsExempt          bool
+	ExemptReason      string
 }
 
 // TagViolation represents a tag validation violation
 type TagViolation struct {
-	ResourceType     string
-	ResourceName     string
-	ResourcePath     string
-	MissingTags      []string
+	ResourceType      string
+	ResourceName      string
+	ResourcePath      string
+	MissingTags       []string
 	PatternViolations []PatternViolation
-	IsExempt         bool
-	ExemptReason     string
+	IsExempt          bool
+	ExemptReason      string
 }
 
 // PatternViolation represents a tag value that doesn't match its required pattern
@@ -192,7 +192,7 @@ func ValidateResources(resources []parser.Resource, providers []parser.ProviderC
 						logging.Debug("Resource %s '%s' inherits tag '%s' from provider default_tags",
 							resource.Type, resource.Name, requiredTag)
 					}
-					
+
 					// Validate pattern for tag from default_tags
 					if valid, errorMsg := cfg.ValidateTagValue(requiredTag, tagValue); !valid {
 						patternViolations = append(patternViolations, PatternViolation{
@@ -364,45 +364,45 @@ func ValidateTerraformPlan(planPath string, cfg *config.Config, logLevel string)
 
 	// Validate both direct and module resources
 	result := ValidateWithModules(directResources, moduleResources, cfg, providerTags)
-	
+
 	// Extract violations and stats from the result
 	var violations []TagViolation
 	var allResources []parser.Resource
-	
+
 	// Collect violations from direct resources
 	for _, rv := range result.DirectResources {
 		if !rv.IsCompliant {
 			violations = append(violations, TagViolation{
-				ResourceType: rv.Type,
-				ResourceName: rv.Name,
-				ResourcePath: rv.Path,
-				MissingTags:  rv.MissingTags,
+				ResourceType:      rv.Type,
+				ResourceName:      rv.Name,
+				ResourcePath:      rv.Path,
+				MissingTags:       rv.MissingTags,
 				PatternViolations: rv.PatternViolations,
 			})
 		}
 		// Note: We can't reconstruct the full Resource from ResourceValidation
 		// This is a limitation of the current design
 	}
-	
+
 	// Collect violations from module resources
 	for _, mrv := range result.ModuleResources {
 		if !mrv.IsCompliant {
 			violations = append(violations, TagViolation{
-				ResourceType: mrv.Type,
-				ResourceName: mrv.Name,
-				ResourcePath: mrv.ModulePath,
-				MissingTags:  mrv.MissingTags,
+				ResourceType:      mrv.Type,
+				ResourceName:      mrv.Name,
+				ResourcePath:      mrv.ModulePath,
+				MissingTags:       mrv.MissingTags,
 				PatternViolations: mrv.PatternViolations,
 			})
 		}
 	}
-	
+
 	// Create stats
 	stats := TagComplianceStats{
-		TotalResources:      result.Summary.TotalResources,
-		CompliantResources:  result.Summary.TotalCompliant,
+		TotalResources:     result.Summary.TotalResources,
+		CompliantResources: result.Summary.TotalCompliant,
 	}
-	
+
 	valid := len(violations) == 0
 	return valid, violations, stats, allResources
 }

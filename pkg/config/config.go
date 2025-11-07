@@ -24,7 +24,7 @@ type Config struct {
 	Exemptions    []ResourceExemption       `json:"exemptions" yaml:"exemptions"`
 	ReportPath    string                    `json:"report_path" yaml:"report_path"`
 	IgnoreTagCase bool                      `json:"-" yaml:"-"` // Runtime option, not from config file
-	
+
 	// Legacy support - will be populated from RequiredTags for backward compatibility
 	Required []string `json:"-" yaml:"-"`
 }
@@ -47,7 +47,7 @@ func LoadConfig(path string) (*Config, error) {
 	var data []byte
 	var err error
 	var ext string
-	
+
 	// Check if it's a remote URL
 	if IsRemoteURL(path) {
 		data, err = FetchRemoteConfig(path)
@@ -204,7 +204,7 @@ func (c *Config) UnmarshalYAML(value *yaml.Node) error {
 		Exemptions   []ResourceExemption `yaml:"exemptions"`
 		ReportPath   string              `yaml:"report_path"`
 	}
-	
+
 	var temp configAlias
 	if err := value.Decode(&temp); err != nil {
 		return err
@@ -278,7 +278,7 @@ func (c *Config) ValidateTagValue(tagName, tagValue string) (bool, string) {
 	// Find the tag requirement (case-sensitive or case-insensitive)
 	var req TagRequirement
 	var found bool
-	
+
 	if c.IgnoreTagCase {
 		for name, requirement := range c.RequiredTags {
 			if strings.EqualFold(name, tagName) {
@@ -290,18 +290,18 @@ func (c *Config) ValidateTagValue(tagName, tagValue string) (bool, string) {
 	} else {
 		req, found = c.RequiredTags[tagName]
 	}
-	
+
 	if !found || req.compiledPattern == nil {
 		// No pattern defined, so value is valid
 		return true, ""
 	}
-	
+
 	if req.compiledPattern.MatchString(tagValue) {
 		return true, ""
 	}
-	
+
 	// Pattern validation failed
 	errorMsg := fmt.Sprintf("value '%s' does not match required pattern '%s'", tagValue, req.Pattern)
-	
+
 	return false, errorMsg
 }

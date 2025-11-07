@@ -21,9 +21,9 @@ type UnifiedReportData struct {
 	Violations           []TagViolation
 	HasExcludedResources bool
 	// Module-specific fields
-	ModuleResources      []ModuleResourceValidation
-	ModuleViolations     []TagViolation
-	HasModuleResources   bool
+	ModuleResources    []ModuleResourceValidation
+	ModuleViolations   []TagViolation
+	HasModuleResources bool
 }
 
 // GenerateUnifiedHTMLReport generates a single report that handles both direct and module resources

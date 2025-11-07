@@ -419,7 +419,7 @@ func ParseTerraformPlanWithModules(planPath string, logLevel string) ([]Resource
 				ModuleName:   moduleName,
 				ModuleSource: moduleSource,
 			}
-			
+
 			// Initialize TagSources if not already done
 			if moduleResource.TagSources == nil {
 				moduleResource.TagSources = make(map[string]TagSource)
@@ -431,7 +431,7 @@ func ParseTerraformPlanWithModules(planPath string, logLevel string) ([]Resource
 					}
 				}
 			}
-			
+
 			moduleResources = append(moduleResources, moduleResource)
 		} else {
 			// This is a direct resource

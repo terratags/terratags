@@ -9,9 +9,9 @@ import (
 
 // ValidationSummary provides basic validation summary
 type ValidationSummary struct {
-	TotalResources        int
-	CompliantResources    int
-	CompliancePercentage  float64
+	TotalResources       int
+	CompliantResources   int
+	CompliancePercentage float64
 }
 
 // ModuleResourceValidation represents validation result for a module resource
