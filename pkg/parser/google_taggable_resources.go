@@ -210,6 +210,8 @@ var googleTaggableResources = map[string]bool{
 	"google_network_services_multicast_domain":                     true,
 	"google_network_services_multicast_domain_activation":          true,
 	"google_network_services_multicast_domain_group":               true,
+	"google_network_services_multicast_group_consumer_activation":  true,
+	"google_network_services_multicast_group_producer_activation":  true,
 	"google_network_services_multicast_group_range":                true,
 	"google_network_services_multicast_group_range_activation":     true,
 	"google_network_services_multicast_producer_association":       true,
