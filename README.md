@@ -5,6 +5,8 @@
 
 <p align="center">Terratags is a tool for validating tags on AWS, Azure, and Google Cloud resources in Terraform configurations.</p>
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/terratags/terratags)](https://goreportcard.com/report/github.com/terratags/terratags)
+
 ## Features
 
 - Validates required tags on AWS, Azure, and Google Cloud resources
