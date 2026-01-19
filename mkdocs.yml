@@ -1,5 +1,5 @@
 site_name: Terratags
-site_description: A tool for validating tags on AWS, Azure, and Google Cloud resources in Terraform configurations
+site_description: A tool for validating tags on AWS, Azure, Google Cloud, and Alibaba Cloud resources in Terraform configurations
 site_url: https://terratags.github.io/terratags/
 repo_url: https://github.com/terratags/terratags
 repo_name: terratags/terratags
@@ -82,6 +82,7 @@ nav:
     - AWSCC Support: awscc_support.md
     - Azure Support: azure-support.md
     - Google Cloud Support: google-support.md
+    - Alibaba Cloud Support: alicloud-support.md
     - Supported Providers: providers.md
   - Development:
     - Architecture: architecture.md

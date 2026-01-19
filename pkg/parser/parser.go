@@ -145,6 +145,10 @@ func isTaggableResource(resourceType string) bool {
 	if strings.HasPrefix(resourceType, "google_") {
 		return googleTaggableResources[resourceType]
 	}
+	// Check if it's an AliCloud resource
+	if strings.HasPrefix(resourceType, "alicloud_") {
+		return alicloudTaggableResources[resourceType]
+	}
 	// Use the comprehensive list of AWS and AWSCC taggable resources
 	return awsTaggableResources[resourceType]
 }
@@ -172,6 +176,8 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 		isAzapi := strings.HasPrefix(resourceType, "azapi_")
 		// Check if this is a Google resource
 		isGoogle := strings.HasPrefix(resourceType, "google_")
+		// Check if this is an AliCloud resource
+		isAliCloud := strings.HasPrefix(resourceType, "alicloud_")
 
 		if isAWSCC {
 			// For AWSCC resources, tags are in the format: tags = [{key = "Key", value = "Value"}]
@@ -251,6 +257,32 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 				}
 			} else {
 				logging.Debug("No labels attribute found in %s %s", resourceType, resourceName)
+			}
+		} else if isAliCloud {
+			// For AliCloud resources, tags are in the format: tags = {Key = "Value"} (same as AWS)
+			tagsPattern := `tags\s*=\s*{([\s\S]*?)}`
+			tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
+			tagsMatch := tagsRegex.FindStringSubmatch(resourceMatch)
+
+			if len(tagsMatch) > 1 {
+				logging.Debug("Found tags attribute in %s %s", resourceType, resourceName)
+
+				// Extract key-value pairs
+				tagContent := tagsMatch[1]
+				keyValuePattern := `["']?([A-Za-z0-9_-]+)["']?\s*=\s*["']?([^,"'}\s]*)["']?`
+				keyValueRegex := regexp.MustCompile(keyValuePattern)
+				keyValueMatches := keyValueRegex.FindAllStringSubmatch(tagContent, -1)
+
+				for _, match := range keyValueMatches {
+					if len(match) > 2 {
+						key := match[1]
+						value := match[2]
+						logging.Debug("Found tag key: %s", key)
+						tags[key] = value
+					}
+				}
+			} else {
+				logging.Debug("No tags attribute found in %s %s", resourceType, resourceName)
 			}
 		} else {
 			// For AWS resources, tags are in the format: tags = {Key = "Value"}
