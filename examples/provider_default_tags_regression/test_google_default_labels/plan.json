@@ -1,0 +1,24 @@
+{
+  "resource_changes": [
+    {
+      "address": "google_storage_bucket.example",
+      "type": "google_storage_bucket", 
+      "name": "example",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "name": "my-test-bucket-example",
+          "location": "US",
+          "labels": {
+            "name": "test-bucket"
+          },
+          "effective_labels": {
+            "environment": "dev",
+            "name": "test-bucket", 
+            "team": "platform"
+          }
+        }
+      }
+    }
+  ]
+}

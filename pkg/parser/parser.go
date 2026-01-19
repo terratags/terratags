@@ -478,6 +478,34 @@ func ParseTerraformPlanWithModules(planPath string, logLevel string) ([]Resource
 func extractTagsFromPlanResource(resource map[string]any) map[string]string {
 	tags := make(map[string]string)
 
+	// Check if the resource has tags_all (AWS provider with default_tags)
+	// tags_all contains the merged tags from both resource-level and provider default_tags
+	if tagsAllInterface, ok := resource["tags_all"]; ok {
+		if tagsAllMap, ok := tagsAllInterface.(map[string]any); ok {
+			logging.Debug("Found tags_all in plan resource (AWS default_tags)")
+			for k, v := range tagsAllMap {
+				if strValue, ok := v.(string); ok {
+					logging.Debug("Found tag_all key: %s", k)
+					tags[k] = strValue
+				}
+			}
+		}
+	}
+
+	// Check if the resource has effective_labels (Google provider with default_labels)
+	// effective_labels contains the merged labels from both resource-level and provider default_labels
+	if effectiveLabelsInterface, ok := resource["effective_labels"]; ok {
+		if effectiveLabelsMap, ok := effectiveLabelsInterface.(map[string]any); ok {
+			logging.Debug("Found effective_labels in plan resource (Google default_labels)")
+			for k, v := range effectiveLabelsMap {
+				if strValue, ok := v.(string); ok {
+					logging.Debug("Found effective_label key: %s", k)
+					tags[k] = strValue
+				}
+			}
+		}
+	}
+
 	// Check if the resource has tags
 	if tagsInterface, ok := resource["tags"]; ok {
 		// Check if this is an AWSCC resource (tags will be a list of maps with key/value pairs)
@@ -501,11 +529,14 @@ func extractTagsFromPlanResource(resource map[string]any) map[string]string {
 			}
 		} else if tagsMap, ok := tagsInterface.(map[string]any); ok {
 			// This is the standard AWS/Azure provider tags format (map of key/value)
-			logging.Debug("Found tags in plan resource")
-			for k, v := range tagsMap {
-				if strValue, ok := v.(string); ok {
-					logging.Debug("Found tag key: %s", k)
-					tags[k] = strValue
+			// Only use this if tags_all is not available (to avoid overriding merged tags)
+			if _, hasTagsAll := resource["tags_all"]; !hasTagsAll {
+				logging.Debug("Found tags in plan resource")
+				for k, v := range tagsMap {
+					if strValue, ok := v.(string); ok {
+						logging.Debug("Found tag key: %s", k)
+						tags[k] = strValue
+					}
 				}
 			}
 		}
@@ -514,11 +545,14 @@ func extractTagsFromPlanResource(resource map[string]any) map[string]string {
 	// Check if the resource has labels (for Google resources)
 	if labelsInterface, ok := resource["labels"]; ok {
 		if labelsMap, ok := labelsInterface.(map[string]any); ok {
-			logging.Debug("Found labels in plan resource")
-			for k, v := range labelsMap {
-				if strValue, ok := v.(string); ok {
-					logging.Debug("Found label key: %s", k)
-					tags[k] = strValue
+			// Only use this if effective_labels is not available (to avoid overriding merged labels)
+			if _, hasEffectiveLabels := resource["effective_labels"]; !hasEffectiveLabels {
+				logging.Debug("Found labels in plan resource")
+				for k, v := range labelsMap {
+					if strValue, ok := v.(string); ok {
+						logging.Debug("Found label key: %s", k)
+						tags[k] = strValue
+					}
 				}
 			}
 		}

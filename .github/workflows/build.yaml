@@ -47,6 +47,18 @@ jobs:
         include:
           - name: provider_default_tags
             expected_results: 0
+          - name: provider_default_tags_regression/test_default_tags
+            expected_results: 0
+            plan: plan.json
+            config: provider_default_tags_regression/test_default_tags/config.yaml
+          - name: provider_default_tags_regression/test_no_default_tags
+            expected_results: 0
+            plan: plan.json
+            config: provider_default_tags_regression/test_no_default_tags/config.yaml
+          - name: provider_default_tags_regression/test_google_default_labels
+            expected_results: 0
+            plan: plan.json
+            config: provider_default_tags_regression/test_google_default_labels/config.yaml
           - name: module_blocks
             expected_results: 1
           - name: resource_blocks
