@@ -3,13 +3,13 @@
   <span style="font-size:48px; font-weight:bold; vertical-align:middle">Terratags</span>
 </p>
 
-<p align="center">Terratags is a tool for validating tags on AWS, Azure, and Google Cloud resources in Terraform configurations.</p>
+<p align="center">Terratags is a tool for validating tags on AWS, Azure, Google Cloud, and Alibaba Cloud resources in Terraform configurations.</p>
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/terratags/terratags)](https://goreportcard.com/report/github.com/terratags/terratags)
 
 ## Features
 
-- Validates required tags on AWS, Azure, and Google Cloud resources
+- Validates required tags on AWS, Azure, Google Cloud, and Alibaba Cloud resources
 - **Advanced pattern matching** with regex validation for tag values
 - **Module resource validation** - validates resources created by external modules via Terraform plan analysis
 - **Remote config files** - load config from HTTP/HTTPS URLs or Git repositories
@@ -19,6 +19,7 @@
 - Supports azapi provider default_tags
 - Supports Google Cloud provider with labels (GCP uses 'labels' instead of 'tags')
 - Supports Google provider default_labels
+- Supports Alibaba Cloud provider with tags (uses same format as AWS)
 - Supports module-level tags with tag inheritance
 - Supports exemptions for specific resources
 - Generates HTML reports of tag compliance

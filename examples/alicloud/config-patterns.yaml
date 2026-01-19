@@ -1,0 +1,7 @@
+required_tags:
+  Name: {}
+  Environment:
+    pattern: "^(dev|test|staging|prod)$"
+  Project: {}
+  Owner:
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"

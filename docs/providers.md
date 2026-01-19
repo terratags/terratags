@@ -4,6 +4,7 @@ This document lists the providers and versions supported by Terratags.
 
 | Provider | Version |
 |----------|--------|
+| alicloud | 1.268.0 |
 | azapi | 2.7.0 |
 | aws | 6.17.0 |
 | awscc | 1.60.0 |
