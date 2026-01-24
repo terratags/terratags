@@ -19,10 +19,10 @@ Terratags helps enforce these tagging standards across your infrastructure, ensu
 - **Tag Validation**: Validates required tags on AWS, Azure, and Google Cloud resources
 - **Pattern Matching**: Advanced regex validation for tag values to enforce naming conventions
 - **Remote Config Files**: Load configuration from HTTP/HTTPS URLs or Git repositories
-- **Default Tags Support**: Supports AWS provider default_tags and Google provider default_labels
+- **Default Tags Support**: Supports AWS provider default_tags, Google provider default_labels, and Google Beta provider default_labels
 - **AWSCC Support**: Supports AWSCC provider tag format ( Refer [exclusion list](https://github.com/terratags/terratags/blob/main/scripts/update_resources.go#L15) for resources with non compliant tag schema)
 - **Azure Support**: Supports Azure providers (azurerm and azapi)
-- **Google Cloud Support**: Supports Google Cloud provider with labels (GCP uses 'labels' instead of 'tags')
+- **Google Cloud Support**: Supports both Google Cloud provider (`google`) and Google Cloud Beta provider (`google-beta`) with labels (GCP uses 'labels' instead of 'tags')
 - **Module-Level Tags**: Supports module-level tags
 - **Exemption Support**: Supports exemptions for specific resources
 - **HTML Reports**: Generates HTML reports of tag compliance

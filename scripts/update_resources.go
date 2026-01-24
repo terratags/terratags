@@ -141,7 +141,7 @@ func hasLabelsAttribute(schema ResourceSchema) bool {
 	return hasLabels || hasEffectiveLabels
 }
 
-// createTerraformConfig creates a temporary Terraform configuration with AWS, AWSCC, Azurerm, azapi and google providers
+// createTerraformConfig creates a temporary Terraform configuration with AWS, AWSCC, Azurerm, azapi, google and google-beta providers
 func createTerraformConfig(tempDir string) error {
 	config := `terraform {
   required_providers {
@@ -159,6 +159,9 @@ func createTerraformConfig(tempDir string) error {
     }
     google = {
       source = "hashicorp/google"
+    }
+    google-beta = {
+      source = "hashicorp/google-beta"
     }
   }
 }
@@ -182,6 +185,11 @@ provider "azapi" {
 }
 
 provider "google" {
+  project = "test-project"
+  region  = "us-central1"
+}
+
+provider "google-beta" {
   project = "test-project"
   region  = "us-central1"
 }

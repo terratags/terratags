@@ -19,6 +19,7 @@
 - Supports azapi provider default_tags
 - Supports Google Cloud provider with labels (GCP uses 'labels' instead of 'tags')
 - Supports Google provider default_labels
+- Supports Google Cloud Beta provider (google-beta) with labels and default_labels
 - Supports Alibaba Cloud provider with tags (uses same format as AWS)
 - Supports module-level tags with tag inheritance
 - Supports exemptions for specific resources
