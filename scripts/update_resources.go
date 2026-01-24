@@ -141,7 +141,7 @@ func hasLabelsAttribute(schema ResourceSchema) bool {
 	return hasLabels || hasEffectiveLabels
 }
 
-// createTerraformConfig creates a temporary Terraform configuration with AWS, AWSCC, Azurerm, azapi, google and google-beta providers
+// createTerraformConfig creates a temporary Terraform configuration with AWS, AWSCC, Azurerm, azapi, google, google-beta, and datadog providers
 func createTerraformConfig(tempDir string) error {
 	config := `terraform {
   required_providers {
@@ -162,6 +162,9 @@ func createTerraformConfig(tempDir string) error {
     }
     google-beta = {
       source = "hashicorp/google-beta"
+    }
+    datadog = {
+      source = "DataDog/datadog"
     }
   }
 }
@@ -192,6 +195,11 @@ provider "google" {
 provider "google-beta" {
   project = "test-project"
   region  = "us-central1"
+}
+
+provider "datadog" {
+  # Disable validation to avoid requiring API keys during schema extraction
+  validate = false
 }
 `
 	return os.WriteFile(filepath.Join(tempDir, "main.tf"), []byte(config), 0644)
@@ -292,6 +300,28 @@ func generateGoogleGoFile(googleResources []string, outputFile string) error {
 	return os.WriteFile(outputFile, []byte(content.String()), 0644)
 }
 
+// generateDatadogGoFile generates a Go file with the list of Datadog taggable resources
+func generateDatadogGoFile(datadogResources []string, outputFile string) error {
+	// Sort resources alphabetically
+	sort.Strings(datadogResources)
+
+	var content strings.Builder
+	content.WriteString("package parser\n\n")
+
+	content.WriteString("// Datadog taggable resources\n")
+	content.WriteString("// This list is automatically generated from the provider schemas\n")
+	content.WriteString("// and represents resources that support the 'tags' attribute\n")
+	content.WriteString("var datadogTaggableResources = map[string]bool{\n")
+
+	// Datadog resources
+	for _, resource := range datadogResources {
+		content.WriteString(fmt.Sprintf("\t\"%s\": true,\n", resource))
+	}
+	content.WriteString("}")
+
+	return os.WriteFile(outputFile, []byte(content.String()), 0644)
+}
+
 func main() {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "terraform-providers")
@@ -364,6 +394,7 @@ func main() {
 	var awsccResources []string
 	var azurermResources []string
 	var googleResources []string
+	var datadogResources []string
 
 	// Process AWS provider
 	awsSchema, ok := schema.ProviderSchemas["registry.terraform.io/hashicorp/aws"]
@@ -405,6 +436,16 @@ func main() {
 		}
 	}
 
+	// Process Datadog provider
+	datadogSchema, ok := schema.ProviderSchemas["registry.terraform.io/datadog/datadog"]
+	if ok {
+		for resourceName, resourceSchema := range datadogSchema.ResourceSchemas {
+			if hasTagsAttribute(resourceSchema) {
+				datadogResources = append(datadogResources, resourceName)
+			}
+		}
+	}
+
 	// Determine output file path
 	execPath, err := os.Executable()
 	if err != nil {
@@ -417,6 +458,7 @@ func main() {
 	awsOutputFile := filepath.Join(repoRoot, "pkg", "parser", "aws_taggable_resources.go")
 	azureOutputFile := filepath.Join(repoRoot, "pkg", "parser", "azure_taggable_resources.go")
 	googleOutputFile := filepath.Join(repoRoot, "pkg", "parser", "google_taggable_resources.go")
+	datadogOutputFile := filepath.Join(repoRoot, "pkg", "parser", "datadog_taggable_resources.go")
 	providersFile := filepath.Join(repoRoot, "docs", "providers.md")
 
 	// If running from the scripts directory directly
@@ -425,6 +467,7 @@ func main() {
 		awsOutputFile = filepath.Join(repoRoot, "pkg", "parser", "aws_taggable_resources.go")
 		azureOutputFile = filepath.Join(repoRoot, "pkg", "parser", "azure_taggable_resources.go")
 		googleOutputFile = filepath.Join(repoRoot, "pkg", "parser", "google_taggable_resources.go")
+		datadogOutputFile = filepath.Join(repoRoot, "pkg", "parser", "datadog_taggable_resources.go")
 		providersFile = filepath.Join(repoRoot, "docs", "providers.md")
 	} else {
 		// If running from the repo root with go run
@@ -436,6 +479,7 @@ func main() {
 		awsOutputFile = filepath.Join(currentDir, "pkg", "parser", "aws_taggable_resources.go")
 		azureOutputFile = filepath.Join(currentDir, "pkg", "parser", "azure_taggable_resources.go")
 		googleOutputFile = filepath.Join(currentDir, "pkg", "parser", "google_taggable_resources.go")
+		datadogOutputFile = filepath.Join(currentDir, "pkg", "parser", "datadog_taggable_resources.go")
 		providersFile = filepath.Join(currentDir, "docs", "providers.md")
 	}
 
@@ -460,6 +504,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Generate Datadog Go file
+	err = generateDatadogGoFile(datadogResources, datadogOutputFile)
+	if err != nil {
+		fmt.Printf("Error generating Datadog Go file: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Generate providers markdown file
 	err = generateProvidersMarkdown(providers, providersFile)
 	if err != nil {
@@ -467,7 +518,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Successfully updated taggable resources list with %d AWS resources, %d AWSCC resources, %d Azurerm resources, and %d Google resources\n",
-		len(awsResources), len(awsccResources), len(azurermResources), len(googleResources))
+	fmt.Printf("Successfully updated taggable resources list with %d AWS resources, %d AWSCC resources, %d Azurerm resources, %d Google resources, and %d Datadog resources\n",
+		len(awsResources), len(awsccResources), len(azurermResources), len(googleResources), len(datadogResources))
 	fmt.Printf("Successfully generated providers information file at %s\n", providersFile)
 }
