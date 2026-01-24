@@ -133,6 +133,31 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 		}
 	}
 
+	// Find Datadog provider blocks with default_tags as a nested block
+	datadogProviderPattern := `provider\s+"datadog"\s*{([\s\S]*?default_tags[\s\S]*?{[\s\S]*?}[\s\S]*?)}`
+	datadogProviderRegex := regexp.MustCompile(`(?s)` + datadogProviderPattern)
+	datadogProviderMatches := datadogProviderRegex.FindAllStringSubmatch(fileContent, -1)
+
+	for _, match := range datadogProviderMatches {
+		if len(match) > 1 {
+			providerName := "datadog"
+			providerBody := match[1]
+
+			defaultTags := extractDefaultTagsFromProviderBody(providerBody)
+			if len(defaultTags) > 0 {
+				logging.Debug("Found Datadog provider with default_tags")
+				for tag, value := range defaultTags {
+					logging.Debug("Found default tag key: %s with value: %s", tag, value)
+				}
+				providers = append(providers, ProviderConfig{
+					Name:        providerName,
+					DefaultTags: defaultTags,
+					Path:        path,
+				})
+			}
+		}
+	}
+
 	return providers, nil
 }
 

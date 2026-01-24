@@ -101,6 +101,12 @@ jobs:
           - name: plan_deletion_test
             expected_results: 0
             plan: test_plan.json
+          - name: datadog_basic
+            expected_results: 0
+          - name: datadog_default_tags
+            expected_results: 0
+          - name: datadog_patterns
+            expected_results: 1
 
     steps:
     - uses: actions/checkout@v6

@@ -1,0 +1,12 @@
+required_tags:
+  Environment:
+    pattern: "^(dev|test|staging|prod)$"
+  
+  Team:
+    pattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+  
+  Service:
+    pattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+  
+  Version:
+    pattern: "^v?[0-9]+\\.[0-9]+\\.[0-9]+$"

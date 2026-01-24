@@ -149,6 +149,10 @@ func isTaggableResource(resourceType string) bool {
 	if strings.HasPrefix(resourceType, "alicloud_") {
 		return alicloudTaggableResources[resourceType]
 	}
+	// Check if it's a Datadog resource
+	if strings.HasPrefix(resourceType, "datadog_") {
+		return datadogTaggableResources[resourceType]
+	}
 	// Use the comprehensive list of AWS and AWSCC taggable resources
 	return awsTaggableResources[resourceType]
 }
@@ -178,6 +182,8 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 		isGoogle := strings.HasPrefix(resourceType, "google_")
 		// Check if this is an AliCloud resource
 		isAliCloud := strings.HasPrefix(resourceType, "alicloud_")
+		// Check if this is a Datadog resource
+		isDatadog := strings.HasPrefix(resourceType, "datadog_")
 
 		if isAWSCC {
 			// For AWSCC resources, tags are in the format: tags = [{key = "Key", value = "Value"}]
@@ -278,6 +284,33 @@ func extractTagsFromContent(content []byte, resourceType, resourceName string) m
 						key := match[1]
 						value := match[2]
 						logging.Debug("Found tag key: %s", key)
+						tags[key] = value
+					}
+				}
+			} else {
+				logging.Debug("No tags attribute found in %s %s", resourceType, resourceName)
+			}
+		} else if isDatadog {
+			// For Datadog resources, tags are in the format: tags = ["key:value", "key2:value2"]
+			tagsPattern := `tags\s*=\s*\[([\s\S]*?)\]`
+			tagsRegex := regexp.MustCompile(`(?s)` + tagsPattern)
+			tagsMatch := tagsRegex.FindStringSubmatch(resourceMatch)
+
+			if len(tagsMatch) > 1 {
+				logging.Debug("Found tags attribute in %s %s", resourceType, resourceName)
+
+				// Extract key:value pairs from the list format
+				tagContent := tagsMatch[1]
+				// Match quoted strings containing key:value pairs
+				tagPattern := `["']([^"']*?):([^"']*?)["']`
+				tagRegex := regexp.MustCompile(tagPattern)
+				tagMatches := tagRegex.FindAllStringSubmatch(tagContent, -1)
+
+				for _, match := range tagMatches {
+					if len(match) > 2 {
+						key := match[1]
+						value := match[2]
+						logging.Debug("Found Datadog tag key: %s with value: %s", key, value)
 						tags[key] = value
 					}
 				}
