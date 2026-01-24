@@ -5,9 +5,10 @@ resource "datadog_monitor" "cpu_monitor" {
   query   = "avg(last_5m):avg:system.cpu.user{*} > 0.8"
 
   tags = [
+    "Name:cpu-monitor",
     "Environment:production",
-    "Team:platform",
-    "Service:web-api"
+    "Owner:platform-team",
+    "Project:monitoring"
   ]
 }
 
@@ -17,9 +18,10 @@ resource "datadog_dashboard" "main_dashboard" {
   layout_type = "ordered"
 
   tags = [
+    "Name:main-dashboard",
     "Environment:production",
-    "Team:platform",
-    "Service:web-api"
+    "Owner:platform-team",
+    "Project:monitoring"
   ]
 
   widget {
@@ -42,6 +44,7 @@ resource "datadog_synthetics_test" "api_test" {
   type    = "api"
   subtype = "http"
   status  = "live"
+  locations = ""
 
   request_definition {
     method = "GET"
@@ -49,8 +52,9 @@ resource "datadog_synthetics_test" "api_test" {
   }
 
   tags = [
+    "Name:api-health-check",
     "Environment:production",
-    "Team:platform",
-    "Service:web-api"
+    "Owner:platform-team",
+    "Project:monitoring"
   ]
 }
