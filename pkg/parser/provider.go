@@ -95,15 +95,15 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 		}
 	}
 
-	// Find Google provider blocks with default_labels as a direct attribute
-	googleProviderPattern := `provider\s+"google"\s*{([\s\S]*?default_labels\s*=\s*{([\s\S]*?)}[\s\S]*?)}`
+	// Find Google and Google Beta provider blocks with default_labels as a direct attribute
+	googleProviderPattern := `provider\s+"(google|google-beta)"\s*{([\s\S]*?default_labels\s*=\s*{([\s\S]*?)}[\s\S]*?)}`
 	googleProviderRegex := regexp.MustCompile(`(?s)` + googleProviderPattern)
 	googleProviderMatches := googleProviderRegex.FindAllStringSubmatch(fileContent, -1)
 
 	for _, match := range googleProviderMatches {
-		if len(match) > 2 {
-			providerName := "google"
-			labelContent := match[2]
+		if len(match) > 3 {
+			providerName := match[1] // "google" or "google-beta"
+			labelContent := match[3]
 
 			// Extract key-value pairs from the labels block
 			defaultLabels := make(map[string]string)
@@ -120,7 +120,7 @@ func ParseProviderBlocks(path string) ([]ProviderConfig, error) {
 			}
 
 			if len(defaultLabels) > 0 {
-				logging.Debug("Found google provider with default_labels")
+				logging.Debug("Found %s provider with default_labels", providerName)
 				for label, value := range defaultLabels {
 					logging.Debug("Found default label key: %s with value: %s", label, value)
 				}

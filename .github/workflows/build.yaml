@@ -59,6 +59,10 @@ jobs:
             expected_results: 0
             plan: plan.json
             config: provider_default_tags_regression/test_google_default_labels/config.yaml
+          - name: provider_default_tags_regression/test_google_beta_default_labels
+            expected_results: 0
+            plan: plan.json
+            config: provider_default_tags_regression/test_google_beta_default_labels/config.yaml
           - name: module_blocks
             expected_results: 1
           - name: resource_blocks
@@ -80,6 +84,8 @@ jobs:
           - name: google_labels
             expected_results: 1
           - name: google_passing
+            expected_results: 0
+          - name: google_beta_passing
             expected_results: 0
           - name: alicloud
             expected_results: 0

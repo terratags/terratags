@@ -16,6 +16,9 @@ This directory contains test cases to ensure terratags correctly handles provide
 
 ### 3. Google with Default Labels (`test_google_default_labels/`)
 - Tests Google provider with `default_labels` configuration
+
+### 4. Google Beta with Default Labels (`test_google_beta_default_labels/`)
+- Tests Google Beta provider with `default_labels` configuration
 - Validates that labels from `effective_labels` field are properly detected
 - Should pass validation when default_labels provide required labels
 
@@ -39,6 +42,10 @@ terratags -config="spec-tags.yaml" -plan="plan.json"
 # Test Google with default_labels (using mock plan.json)
 cd ../test_google_default_labels
 terratags -config="spec-tags.yaml" -plan="plan.json"
+
+# Test Google Beta with default_labels (using mock plan.json)
+cd ../test_google_beta_default_labels
+terratags -config="spec-tags.yaml" -plan="plan.json"
 ```
 
 All tests should output: `All resources have the required tags!`
@@ -53,6 +60,7 @@ This addresses GitHub issue #80: AWS default_tags are not detected when running 
 |----------|----------------|----------------|--------------|---------|
 | AWS | `default_tags` | `tags` | `tags_all` | ✅ Supported |
 | Google | `default_labels` | `labels` | `effective_labels` | ✅ Supported |
+| Google Beta | `default_labels` | `labels` | `effective_labels` | ✅ Supported |
 | Azure azapi | `default_tags` | `tags` | ? | ❓ Unknown |
 | Azure azurerm | N/A | `tags` | N/A | ✅ Working |
 | AWSCC | N/A | `tags` (list) | N/A | ✅ Working |

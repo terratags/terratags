@@ -1,15 +1,17 @@
 # Google Cloud Provider Support
 
-Terratags supports the Google Cloud provider for validating labels on GCP resources.
+Terratags supports both the Google Cloud provider (`google`) and Google Cloud Beta provider (`google-beta`) for validating labels on GCP resources.
 
 ## Overview
 
 Google Cloud Platform uses **labels** instead of **tags** for resource metadata. Terratags treats labels the same way as tags for validation purposes, ensuring consistent tag/label compliance across AWS, Azure, and Google Cloud.
 
+Both the `google` and `google-beta` providers use identical resource naming conventions and label formats, so Terratags handles them seamlessly with the same validation logic.
+
 ## Supported Features
 
 - ✅ Label validation on 244+ Google Cloud resources
-- ✅ Provider-level `default_labels` support
+- ✅ Provider-level `default_labels` support for both `google` and `google-beta` providers
 - ✅ Pattern matching for label values
 - ✅ HTML report generation
 - ✅ Terraform plan validation

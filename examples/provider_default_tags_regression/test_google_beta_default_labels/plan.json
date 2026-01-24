@@ -1,0 +1,24 @@
+{
+  "resource_changes": [
+    {
+      "address": "google_storage_bucket.beta_example",
+      "type": "google_storage_bucket", 
+      "name": "beta_example",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "name": "my-beta-test-bucket",
+          "location": "US",
+          "labels": {
+            "name": "beta-test-bucket"
+          },
+          "effective_labels": {
+            "environment": "beta",
+            "name": "beta-test-bucket", 
+            "team": "beta-platform"
+          }
+        }
+      }
+    }
+  ]
+}
