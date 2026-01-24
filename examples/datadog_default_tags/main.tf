@@ -5,7 +5,8 @@ provider "datadog" {
   default_tags {
     tags = {
       Environment = "production"
-      Team        = "platform"
+      Owner       = "platform-team"
+      Project     = "monitoring"
     }
   }
 }
@@ -17,6 +18,7 @@ resource "datadog_monitor" "cpu_monitor" {
   query   = "avg(last_5m):avg:system.cpu.user{*} > 0.8"
 
   tags = [
+    "Name:cpu-monitor",
     "Service:web-api",
     "Priority:high"
   ]
@@ -36,6 +38,7 @@ resource "datadog_service_level_objective" "api_slo" {
   }
 
   tags = [
+    "Name:api-slo",
     "Service:web-api",
     "Type:availability"
   ]
