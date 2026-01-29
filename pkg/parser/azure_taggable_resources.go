@@ -264,6 +264,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_network_manager_verifier_workspace":                                  true,
 	"azurerm_network_profile":                                                     true,
 	"azurerm_network_security_group":                                              true,
+	"azurerm_network_security_perimeter":                                          true,
 	"azurerm_network_watcher":                                                     true,
 	"azurerm_network_watcher_flow_log":                                            true,
 	"azurerm_nginx_deployment":                                                    true,
