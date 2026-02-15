@@ -192,6 +192,7 @@ var googleTaggableResources = map[string]bool{
 	"google_network_security_intercept_endpoint_group_association": true,
 	"google_network_security_mirroring_deployment":                 true,
 	"google_network_security_mirroring_deployment_group":           true,
+	"google_network_security_mirroring_endpoint":                   true,
 	"google_network_security_mirroring_endpoint_group":             true,
 	"google_network_security_mirroring_endpoint_group_association": true,
 	"google_network_security_security_profile":                     true,

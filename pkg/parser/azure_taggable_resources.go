@@ -15,6 +15,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_api_management":                                                      true,
 	"azurerm_api_management_named_value":                                          true,
 	"azurerm_api_management_standalone_gateway":                                   true,
+	"azurerm_api_management_workspace_named_value":                                true,
 	"azurerm_app_configuration":                                                   true,
 	"azurerm_app_configuration_feature":                                           true,
 	"azurerm_app_configuration_key":                                               true,
