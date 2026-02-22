@@ -228,6 +228,7 @@ var googleTaggableResources = map[string]bool{
 	"google_oracle_database_cloud_exadata_infrastructure":          true,
 	"google_oracle_database_cloud_vm_cluster":                      true,
 	"google_oracle_database_db_system":                             true,
+	"google_oracle_database_exadb_vm_cluster":                      true,
 	"google_oracle_database_exascale_db_storage_vault":             true,
 	"google_oracle_database_odb_network":                           true,
 	"google_oracle_database_odb_subnet":                            true,
