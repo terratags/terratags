@@ -143,6 +143,7 @@ var googleTaggableResources = map[string]bool{
 	"google_healthcare_hl7_v2_store":                               true,
 	"google_healthcare_pipeline_job":                               true,
 	"google_healthcare_workspace":                                  true,
+	"google_hypercomputecluster_cluster":                           true,
 	"google_integration_connectors_connection":                     true,
 	"google_integration_connectors_endpoint_attachment":            true,
 	"google_integration_connectors_managed_zone":                   true,
