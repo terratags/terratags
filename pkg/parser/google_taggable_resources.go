@@ -258,6 +258,7 @@ var googleTaggableResources = map[string]bool{
 	"google_storage_bucket":                                        true,
 	"google_transcoder_job":                                        true,
 	"google_transcoder_job_template":                               true,
+	"google_vector_search_collection":                              true,
 	"google_vertex_ai_dataset":                                     true,
 	"google_vertex_ai_endpoint":                                    true,
 	"google_vertex_ai_feature_group":                               true,
