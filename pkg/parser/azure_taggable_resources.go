@@ -67,6 +67,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_cdn_profile":                                                         true,
 	"azurerm_cognitive_account":                                                   true,
 	"azurerm_cognitive_account_project":                                           true,
+	"azurerm_cognitive_account_rai_blocklist":                                     true,
 	"azurerm_cognitive_account_rai_policy":                                        true,
 	"azurerm_communication_service":                                               true,
 	"azurerm_confidential_ledger":                                                 true,
