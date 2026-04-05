@@ -273,4 +273,7 @@ var googleTaggableResources = map[string]bool{
 	"google_vertex_ai_tensorboard":                                 true,
 	"google_workbench_instance":                                    true,
 	"google_workflows_workflow":                                    true,
+	"google_workstations_workstation":                              true,
+	"google_workstations_workstation_cluster":                      true,
+	"google_workstations_workstation_config":                       true,
 }
