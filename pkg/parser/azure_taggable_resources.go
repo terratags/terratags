@@ -217,6 +217,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_maintenance_configuration":                                           true,
 	"azurerm_managed_application":                                                 true,
 	"azurerm_managed_application_definition":                                      true,
+	"azurerm_managed_devops_pool":                                                 true,
 	"azurerm_managed_disk":                                                        true,
 	"azurerm_managed_lustre_file_system":                                          true,
 	"azurerm_managed_redis":                                                       true,
