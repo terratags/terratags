@@ -74,6 +74,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_container_app":                                                       true,
 	"azurerm_container_app_environment":                                           true,
 	"azurerm_container_app_environment_certificate":                               true,
+	"azurerm_container_app_environment_managed_certificate":                       true,
 	"azurerm_container_app_job":                                                   true,
 	"azurerm_container_group":                                                     true,
 	"azurerm_container_registry":                                                  true,
