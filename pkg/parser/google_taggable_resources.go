@@ -270,6 +270,7 @@ var googleTaggableResources = map[string]bool{
 	"google_vertex_ai_featurestore_entitytype_feature":             true,
 	"google_vertex_ai_index":                                       true,
 	"google_vertex_ai_index_endpoint":                              true,
+	"google_vertex_ai_reasoning_engine":                            true,
 	"google_vertex_ai_tensorboard":                                 true,
 	"google_workbench_instance":                                    true,
 	"google_workflows_workflow":                                    true,
