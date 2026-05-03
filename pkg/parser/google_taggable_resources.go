@@ -97,6 +97,7 @@ var googleTaggableResources = map[string]bool{
 	"google_developer_connect_insights_config":                     true,
 	"google_dialogflow_cx_intent":                                  true,
 	"google_dns_managed_zone":                                      true,
+	"google_document_ai_schema":                                    true,
 	"google_edgecontainer_cluster":                                 true,
 	"google_edgecontainer_node_pool":                               true,
 	"google_edgecontainer_vpn_connection":                          true,
