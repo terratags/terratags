@@ -7,7 +7,7 @@ toolchain go1.24.6
 require (
 	github.com/go-git/go-git/v5 v5.17.0
 	github.com/hashicorp/hcl/v2 v2.24.0
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
