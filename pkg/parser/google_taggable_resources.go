@@ -57,6 +57,7 @@ var googleTaggableResources = map[string]bool{
 	"google_compute_interconnect_attachment":                       true,
 	"google_compute_region_disk":                                   true,
 	"google_compute_region_instance_template":                      true,
+	"google_compute_region_instant_snapshot":                       true,
 	"google_compute_security_policy":                               true,
 	"google_compute_snapshot":                                      true,
 	"google_compute_storage_pool":                                  true,
