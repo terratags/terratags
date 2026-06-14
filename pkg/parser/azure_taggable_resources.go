@@ -390,8 +390,6 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_virtual_network_gateway_connection":                                      true,
 	"azurerm_virtual_wan":                                                             true,
 	"azurerm_vmware_private_cloud":                                                    true,
-	"azurerm_voice_services_communications_gateway":                                   true,
-	"azurerm_voice_services_communications_gateway_test_line":                         true,
 	"azurerm_vpn_gateway":                                                             true,
 	"azurerm_vpn_server_configuration":                                                true,
 	"azurerm_vpn_site":                                                                true,
