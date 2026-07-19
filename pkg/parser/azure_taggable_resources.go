@@ -185,6 +185,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_key_vault_managed_storage_account":                                   true,
 	"azurerm_key_vault_managed_storage_account_sas_token_definition":              true,
 	"azurerm_key_vault_secret":                                                    true,
+	"azurerm_kubernetes_automatic_cluster":                                        true,
 	"azurerm_kubernetes_cluster":                                                  true,
 	"azurerm_kubernetes_cluster_node_pool":                                        true,
 	"azurerm_kubernetes_fleet_manager":                                            true,
