@@ -6,6 +6,7 @@ package parser
 var googleTaggableResources = map[string]bool{
 	// Google Provider resources
 	"google_active_directory_domain":                               true,
+	"google_agent_identity_auth_provider":                          true,
 	"google_alloydb_backup":                                        true,
 	"google_alloydb_cluster":                                       true,
 	"google_alloydb_instance":                                      true,
@@ -290,6 +291,7 @@ var googleTaggableResources = map[string]bool{
 	"google_vertex_ai_featurestore_entitytype_feature":             true,
 	"google_vertex_ai_index":                                       true,
 	"google_vertex_ai_index_endpoint":                              true,
+	"google_vertex_ai_persistent_resource":                         true,
 	"google_vertex_ai_reasoning_engine":                            true,
 	"google_vertex_ai_tensorboard":                                 true,
 	"google_vertex_ai_tensorboard_experiment":                      true,
