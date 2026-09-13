@@ -273,6 +273,8 @@ var googleTaggableResources = map[string]bool{
 	"google_spanner_instance":                                      true,
 	"google_spanner_instance_config":                               true,
 	"google_storage_bucket":                                        true,
+	"google_storage_ftp_server":                                    true,
+	"google_storage_ftp_user":                                      true,
 	"google_transcoder_job":                                        true,
 	"google_transcoder_job_template":                               true,
 	"google_vector_search_collection":                              true,
