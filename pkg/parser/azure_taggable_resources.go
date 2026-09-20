@@ -340,6 +340,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_stack_hci_virtual_hard_disk":                                    true,
 	"azurerm_static_web_app":                                                 true,
 	"azurerm_storage_account":                                                true,
+	"azurerm_storage_discovery_workspace":                                    true,
 	"azurerm_storage_mover":                                                  true,
 	"azurerm_storage_sync":                                                   true,
 	"azurerm_stream_analytics_cluster":                                       true,
