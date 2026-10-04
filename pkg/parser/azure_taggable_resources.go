@@ -270,6 +270,7 @@ var azureTaggableResources = map[string]bool{
 	"azurerm_oracle_autonomous_database":                                          true,
 	"azurerm_oracle_autonomous_database_clone_from_backup":                        true,
 	"azurerm_oracle_autonomous_database_clone_from_database":                      true,
+	"azurerm_oracle_autonomous_database_cross_region_disaster_recovery":           true,
 	"azurerm_oracle_cloud_vm_cluster":                                             true,
 	"azurerm_oracle_exadata_infrastructure":                                       true,
 	"azurerm_oracle_exascale_database_storage_vault":                              true,
