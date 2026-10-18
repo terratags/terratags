@@ -124,6 +124,7 @@ var googleTaggableResources = map[string]bool{
 	"google_gemini_code_repository_index":                          true,
 	"google_gemini_code_tools_setting":                             true,
 	"google_gemini_code_tools_setting_binding":                     true,
+	"google_gemini_data_analytics_data_agent":                      true,
 	"google_gemini_data_sharing_with_google_setting":               true,
 	"google_gemini_data_sharing_with_google_setting_binding":       true,
 	"google_gemini_gda_observability_setting":                      true,
